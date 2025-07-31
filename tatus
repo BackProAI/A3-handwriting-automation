@@ -1,0 +1,8 @@
+filter.lfs.required=true
+filter.lfs.clean=git-lfs clean -- %f
+filter.lfs.smudge=git-lfs smudge -- %f
+filter.lfs.process=git-lfs filter-process
+user.name=Ethandod
+user.email=backpro@backpro.ai
+credential.https://huggingface.co.provider=generic
+credential.helper=manager-core

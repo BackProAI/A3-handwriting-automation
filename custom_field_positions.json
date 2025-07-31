@@ -1,0 +1,237 @@
+{
+  "page_1": [
+    {
+      "name": "dangers_content",
+      "rect": [
+        50,
+        200,
+        280,
+        300
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "opportunities_content",
+      "rect": [
+        50,
+        350,
+        280,
+        450
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "strengths_content",
+      "rect": [
+        50,
+        500,
+        280,
+        600
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "financial_info",
+      "rect": [
+        320,
+        200,
+        550,
+        300
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "career_plans",
+      "rect": [
+        320,
+        350,
+        550,
+        450
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "additional_notes",
+      "rect": [
+        320,
+        500,
+        550,
+        600
+      ],
+      "type": "text",
+      "multiline": true
+    }
+  ],
+  "page_2": [
+    {
+      "name": "money_goals",
+      "rect": [
+        50,
+        150,
+        160,
+        250
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "money_now",
+      "rect": [
+        50,
+        300,
+        160,
+        400
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "money_todo",
+      "rect": [
+        50,
+        450,
+        160,
+        550
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "business_goals",
+      "rect": [
+        170,
+        150,
+        280,
+        250
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "business_now",
+      "rect": [
+        170,
+        300,
+        280,
+        400
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "business_todo",
+      "rect": [
+        170,
+        450,
+        280,
+        550
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "leisure_goals",
+      "rect": [
+        290,
+        150,
+        400,
+        250
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "leisure_now",
+      "rect": [
+        290,
+        300,
+        400,
+        400
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "leisure_todo",
+      "rect": [
+        290,
+        450,
+        400,
+        550
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "health_goals",
+      "rect": [
+        410,
+        150,
+        520,
+        250
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "health_now",
+      "rect": [
+        410,
+        300,
+        520,
+        400
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "health_todo",
+      "rect": [
+        410,
+        450,
+        520,
+        550
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "family_goals",
+      "rect": [
+        530,
+        150,
+        640,
+        250
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "family_now",
+      "rect": [
+        530,
+        300,
+        640,
+        400
+      ],
+      "type": "text",
+      "multiline": true
+    },
+    {
+      "name": "family_todo",
+      "rect": [
+        530,
+        450,
+        640,
+        550
+      ],
+      "type": "text",
+      "multiline": true
+    }
+  ]
+}

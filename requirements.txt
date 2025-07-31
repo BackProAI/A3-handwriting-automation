@@ -1,0 +1,204 @@
+# ==============================================================================
+# Enhanced TrOCR Handwriting Recognition System - Enterprise Dependencies
+# High-Performance, Production-Ready Implementation
+# ==============================================================================
+
+# Core ML Stack & Transformers
+# Note: Install PyTorch with CUDA support separately:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+transformers[torch]>=4.35.0
+accelerate>=0.24.0
+optimum[onnxruntime-gpu]>=1.15.0
+tokenizers>=0.15.0
+
+# High-Performance Image Processing
+pillow>=10.0.0             # Standard PIL library (Windows compatible)
+opencv-python-headless>=4.8.0
+albumentations>=1.3.1      # Advanced image augmentation for preprocessing
+scikit-image>=0.22.0       # Additional image processing utilities
+
+# Async & Concurrency Framework
+asyncio-mqtt>=0.13.0       # MQTT async client
+aiofiles>=23.2.1           # Async file operations
+aiohttp>=3.9.0             # Async HTTP client/server
+uvloop>=0.19.0; sys_platform != "win32"  # High-performance event loop (Unix only)
+
+# Task Queue & Caching
+celery[redis]>=5.3.4       # Distributed task queue
+redis>=5.0.1               # Redis client
+hiredis>=2.3.2             # High-performance Redis parser
+
+# High-Performance JSON & Data
+orjson>=3.9.10             # Fast JSON library
+python-rapidjson>=1.10     # Alternative fast JSON (more compatible version)
+msgpack>=1.0.7             # Binary serialization
+
+# Configuration & Environment Management
+pydantic[email]>=2.5.0     # Data validation and settings management
+dynaconf>=3.2.4            # Dynamic configuration management
+python-decouple>=3.8       # Environment variable management
+click>=8.1.7               # CLI framework
+
+# Error Handling & Resilience
+tenacity>=8.2.3            # Retry library with exponential backoff
+backoff>=2.2.1             # Alternative backoff library
+pybreaker>=0.5.2          # Circuit breaker pattern implementation (alternative package)
+
+# Monitoring & Observability
+prometheus-client>=0.19.0   # Prometheus metrics
+structlog>=23.2.0          # Structured logging
+sentry-sdk[fastapi]>=1.38.0 # Error tracking and performance monitoring
+psutil>=5.9.6              # System and process monitoring
+
+# File Processing & Document Handling
+PyMuPDF>=1.23.8           # PDF processing (fitz)
+pdf2image>=1.16.3         # PDF to image conversion
+python-magic>=0.4.27      # File type detection via magic numbers
+filetype>=1.2.0           # Alternative file type detection
+pypdf>=3.17.1             # Pure Python PDF library
+
+# PDF manipulation with form fields
+borb
+
+# Data Science & Analysis
+numpy>=1.24.4              # Numerical computing
+pandas>=2.1.4              # Data manipulation and analysis
+matplotlib>=3.8.2          # Plotting and visualization
+seaborn>=0.13.0            # Statistical data visualization
+
+# HTTP & API Framework
+fastapi>=0.104.1           # Modern, fast web framework
+uvicorn[standard]>=0.24.0  # ASGI server
+httpx>=0.25.2              # Async HTTP client
+requests>=2.31.0           # HTTP library
+
+# Database & Storage
+sqlalchemy>=2.0.23         # SQL toolkit and ORM
+alembic>=1.13.0            # Database migration tool
+databases[asyncpg]>=0.8.0  # Async database interface
+
+# Testing & Quality Assurance
+pytest>=7.4.3             # Testing framework
+pytest-asyncio>=0.21.1    # Async testing support
+pytest-cov>=4.1.0         # Coverage reporting
+pytest-mock>=3.12.0       # Mocking for tests
+pytest-benchmark>=4.0.0   # Performance benchmarking
+
+# Code Quality & Formatting
+black>=23.11.0             # Code formatter
+isort>=5.12.0              # Import sorter
+mypy>=1.7.1                # Static type checker
+flake8>=6.1.0              # Linting
+bandit>=1.7.5              # Security linter
+pre-commit>=3.6.0          # Git hooks framework
+
+# Documentation
+mkdocs>=1.5.3             # Documentation generator
+mkdocs-material>=9.4.8    # Material theme for MkDocs
+mkdocstrings[python]>=0.24.0  # API documentation from docstrings
+
+# Development & Debugging
+ipython>=8.17.2            # Enhanced interactive Python shell
+jupyter>=1.0.0             # Jupyter notebook
+memory-profiler>=0.61.0    # Memory usage profiling
+line-profiler>=4.1.1       # Line-by-line profiling
+
+# Additional Utilities
+tqdm>=4.66.1               # Progress bars
+colorama>=0.4.6            # Cross-platform colored terminal text
+rich>=13.7.0               # Rich text and beautiful formatting
+typer>=0.9.0               # CLI framework based on type hints
+pathlib2>=2.3.7            # Enhanced pathlib (if needed for older Python)
+
+# Security & Cryptography
+cryptography>=41.0.7       # Cryptographic recipes and primitives
+bcrypt>=4.1.2              # Password hashing
+
+# File Watching & System Events
+watchdog>=3.0.0            # File system event monitoring
+
+# Compression & Archives
+lz4>=4.3.2                 # Fast compression
+zstandard>=0.22.0          # Zstandard compression
+
+# ==============================================================================
+# Platform-Specific Dependencies
+# ==============================================================================
+
+# Linux/Unix optimizations (install conditionally)
+# uvloop>=0.19.0           # Already included above
+# aiodns>=3.1.1            # DNS resolver for aiohttp
+
+# Windows-specific
+# pywin32>=306             # Windows API bindings (Windows only)
+
+# ==============================================================================
+# Development vs Production
+# ==============================================================================
+
+# For development, also install:
+# jupyter-lab>=4.0.8
+# notebook>=7.0.6
+# ipywidgets>=8.1.1
+
+# For production deployment:
+# gunicorn>=21.2.0         # WSGI HTTP Server
+# supervisor>=4.2.5        # Process control system
+
+# ==============================================================================
+# GPU/CUDA Dependencies (Manual Installation Required)
+# ==============================================================================
+
+# Install PyTorch with CUDA support first:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Or for CPU-only:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# ==============================================================================
+# System Dependencies Required
+# ==============================================================================
+
+# Ubuntu/Debian:
+# sudo apt-get install -y poppler-utils tesseract-ocr libmagic1 libgl1-mesa-glx
+
+# CentOS/RHEL:
+# sudo yum install -y poppler-utils tesseract libmagic
+
+# macOS:
+# brew install poppler tesseract libmagic
+
+# Windows:
+# Download and install poppler-utils from: https://github.com/oschwartz10612/poppler-windows
+# Add to PATH: C:\path\to\poppler\bin
+
+# ==============================================================================
+# GPT-4o OCR Dependencies
+# ==============================================================================
+
+# For OpenAI API calls
+requests>=2.31.0
+
+# Secure environment variable loading
+python-dotenv>=1.0.0
+
+# Text correction (optional)
+pyspellchecker>=0.8.1
+
+# ==============================================================================
+# A3 Document Automation UI Dependencies
+# ==============================================================================
+
+# GUI framework and drag-and-drop
+tkinterdnd2>=0.3.0
+
+# Word document generation
+python-docx>=0.8.11
+
+# Enhanced PDF handling
+PyMuPDF>=1.23.0
+
+# ============================================================================== 
