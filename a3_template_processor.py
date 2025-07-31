@@ -129,16 +129,22 @@ class A3TemplateProcessor:
         # Just create and return the template with empty form fields
         return self.create_template_with_form_fields(output_path)
     
-    def populate_template(self, extracted_results: List[Dict[str, Any]], output_path: Path = None) -> Path:
-        """Create a template and automatically populate it with extracted text."""
+    def populate_template(self, extracted_results: List[Dict[str, Any]], output_path: Path = None, base_template: Path = None) -> Path:
+        """Use existing template and automatically populate it with extracted text."""
         if not output_path:
             timestamp = int(time.time())
             output_path = Path(f"processed_documents/A3_Populated_{timestamp}.pdf")
         
         output_path.parent.mkdir(exist_ok=True)
         
-        # First create template with form fields
-        template_with_fields = self.create_template_with_form_fields()
+        # Use existing template if provided, otherwise create new one
+        if base_template and base_template.exists():
+            template_with_fields = base_template
+            print(f"✅ Using existing template: {template_with_fields}")
+        else:
+            # Fallback: create new template with form fields
+            template_with_fields = self.create_template_with_form_fields()
+            print(f"📝 Created new template: {template_with_fields}")
         
         # Open the template with form fields
         doc = fitz.open(template_with_fields)
@@ -175,12 +181,13 @@ class A3TemplateProcessor:
             doc.save(str(output_path))
             print(f"📁 Saved populated template: {output_path}")
             
-            # Clean up temporary template
-            try:
-                if template_with_fields.exists():
-                    template_with_fields.unlink()
-            except Exception as cleanup_error:
-                print(f"⚠️ Could not clean up temporary template: {cleanup_error}")
+            # Clean up temporary template (only if we created it, not if it's the base template)
+            if not base_template or template_with_fields != base_template:
+                try:
+                    if template_with_fields.exists():
+                        template_with_fields.unlink()
+                except Exception as cleanup_error:
+                    print(f"⚠️ Could not clean up temporary template: {cleanup_error}")
             
             return output_path
             
@@ -197,6 +204,10 @@ class A3TemplateProcessor:
             for field in fields:
                 available_fields[field['name']] = page_key
         
+        print(f"\n🎯 SMART FIELD MAPPING")
+        print(f"{'='*50}")
+        print(f"📋 Available fields: {list(available_fields.keys())}")
+        
         for result in extracted_results:
             if not result.get('success', False):
                 continue
@@ -204,12 +215,21 @@ class A3TemplateProcessor:
             page_num = result.get('page_number', 1)
             sections = result.get('sections', [])
             
+            print(f"\n📄 Processing Page {page_num} with {len(sections)} sections")
+            
             if page_num == 1:
                 # Page 1 mapping - try intelligent mapping to available fields
-                field_mappings.update(self._map_page1_sections(sections, available_fields))
+                page_mappings = self._map_page1_sections(sections, available_fields)
+                field_mappings.update(page_mappings)
             elif page_num == 2:
                 # Page 2 mapping - try intelligent mapping to available fields
-                field_mappings.update(self._map_page2_sections(sections, available_fields))
+                page_mappings = self._map_page2_sections(sections, available_fields)
+                field_mappings.update(page_mappings)
+        
+        print(f"\n✅ FINAL FIELD MAPPINGS:")
+        print(f"{'='*50}")
+        for field_name, text in field_mappings.items():
+            print(f"🎯 {field_name}: {text[:100]}{'...' if len(text) > 100 else ''}")
         
         return field_mappings
     
@@ -218,17 +238,20 @@ class A3TemplateProcessor:
         mappings = {}
         available_fields = available_fields or {}
         
-        for section in sections:
+        for i, section in enumerate(sections):
             text = section.get('text', '').strip()
             location = section.get('location', '').lower()
             
             if not text:
                 continue
             
+            print(f"  📝 Section {i+1}: '{text[:50]}...' at '{location}'")
+            
             # Try to find the best matching field for this text
             best_field = self._find_best_field_match(text, location, available_fields, page=1)
             
             if best_field:
+                print(f"     ✅ Matched to field: '{best_field}'")
                 if best_field in mappings:
                     mappings[best_field] += '\n' + text
                 else:
@@ -237,10 +260,13 @@ class A3TemplateProcessor:
                 # Fallback to generic mapping if no specific field found
                 generic_field = self._get_generic_page1_field(available_fields)
                 if generic_field:
+                    print(f"     🔄 Using fallback field: '{generic_field}'")
                     if generic_field in mappings:
                         mappings[generic_field] += '\n' + text
                     else:
                         mappings[generic_field] = text
+                else:
+                    print(f"     ❌ No field match found - text will be skipped")
         
         return mappings
     
@@ -249,17 +275,20 @@ class A3TemplateProcessor:
         mappings = {}
         available_fields = available_fields or {}
         
-        for section in sections:
+        for i, section in enumerate(sections):
             text = section.get('text', '').strip()
             location = section.get('location', '').lower()
             
             if not text:
                 continue
             
+            print(f"  📝 Section {i+1}: '{text[:50]}...' at '{location}'")
+            
             # Try to find the best matching field for this text
             best_field = self._find_best_field_match(text, location, available_fields, page=2)
             
             if best_field:
+                print(f"     ✅ Matched to field: '{best_field}'")
                 if best_field in mappings:
                     mappings[best_field] += '\n' + text
                 else:
@@ -268,41 +297,154 @@ class A3TemplateProcessor:
                 # Fallback to generic mapping if no specific field found
                 generic_field = self._get_generic_page2_field(available_fields)
                 if generic_field:
+                    print(f"     🔄 Using fallback field: '{generic_field}'")
                     if generic_field in mappings:
                         mappings[generic_field] += '\n' + text
                     else:
                         mappings[generic_field] = text
+                else:
+                    print(f"     ❌ No field match found - text will be skipped")
         
         return mappings
     
     def _find_best_field_match(self, text: str, location: str, available_fields: Dict[str, str], page: int) -> str:
-        """Find the best matching field name for given text and location."""
+        """Find the best matching field name for given text and location using sophisticated mapping."""
         text_lower = text.lower()
         location_lower = location.lower()
         
-        # Look for field names that match content or location keywords
-        for field_name in available_fields.keys():
-            field_lower = field_name.lower()
+        if page == 1:
+            return self._match_page1_field(text_lower, location_lower, available_fields)
+        elif page == 2:
+            return self._match_page2_field(text_lower, location_lower, available_fields)
+        
+        return None
+    
+    def _match_page1_field(self, text_lower: str, location_lower: str, available_fields: Dict[str, str]) -> str:
+        """Match Page 1 text to specific field names based on content and position."""
+        
+        # Check for specific content matches first
+        if any(keyword in text_lower for keyword in ['danger', 'eliminate', 'risk', 'threat', 'avoid', 'prevent']):
+            for field_name in available_fields.keys():
+                if 'danger' in field_name.lower() and 'eliminate' in field_name.lower():
+                    return field_name
+        
+        if any(keyword in text_lower for keyword in ['opportunit', 'focus', 'capture', 'chance', 'potential']):
+            for field_name in available_fields.keys():
+                if 'opportunit' in field_name.lower() and 'focus' in field_name.lower():
+                    return field_name
+        
+        if any(keyword in text_lower for keyword in ['strength', 'reinforce', 'maximi', 'strong', 'advantage']):
+            for field_name in available_fields.keys():
+                if 'strength' in field_name.lower() and 'reinforce' in field_name.lower():
+                    return field_name
+        
+        # Position-based matching for right-side fields
+        if any(pos in location_lower for pos in ['right', 'center right', 'middle right']):
+            # Try to match to specific right-side fields based on vertical position
+            if any(pos in location_lower for pos in ['top', 'upper', 'high']):
+                for field_name in available_fields.keys():
+                    if field_name.lower() == 'right_mid':
+                        return field_name
+            elif any(pos in location_lower for pos in ['middle', 'center', 'mid']):
+                for field_name in available_fields.keys():
+                    if field_name.lower() == 'right_belowmid':
+                        return field_name
+            elif any(pos in location_lower for pos in ['bottom', 'lower', 'down']):
+                for field_name in available_fields.keys():
+                    if field_name.lower() == 'right_bottom':
+                        return field_name
+        
+        # Check for More4Life signature/branding
+        if any(keyword in text_lower for keyword in ['more4life', 'm4lfs', 'brookvale', 'dale street']):
+            for field_name in available_fields.keys():
+                if 'more4life' in field_name.lower():
+                    return field_name
+        
+        return None
+    
+    def _match_page2_field(self, text_lower: str, location_lower: str, available_fields: Dict[str, str]) -> str:
+        """Match Page 2 text to specific field names based on content and position."""
+        
+        # Category-based matching (money, business, leisure, health, family)
+        category = None
+        if any(keyword in text_lower for keyword in ['money', 'financial', 'finance', '$', 'dollar', 'cash', 'income', 'salary']):
+            category = 'money'
+        elif any(keyword in text_lower for keyword in ['business', 'work', 'career', 'job', 'company', 'office']):
+            category = 'business'
+        elif any(keyword in text_lower for keyword in ['leisure', 'hobby', 'fun', 'vacation', 'travel', 'entertainment']):
+            category = 'leisure'
+        elif any(keyword in text_lower for keyword in ['health', 'fitness', 'medical', 'doctor', 'exercise', 'diet']):
+            category = 'health'
+        elif any(keyword in text_lower for keyword in ['family', 'child', 'kids', 'spouse', 'parent', 'home']):
+            category = 'family'
+        
+        if category:
+            # Determine if it's GOALS, NOW, or TO DO based on content
+            field_type = None
+            if any(keyword in text_lower for keyword in ['goal', 'want', 'wish', 'dream', 'aim', 'target']):
+                field_type = 'goals'
+            elif any(keyword in text_lower for keyword in ['now', 'current', 'today', 'present', 'doing']):
+                field_type = 'now'
+            elif any(keyword in text_lower for keyword in ['todo', 'to do', 'action', 'plan', 'next', 'will']):
+                field_type = 'todo'
             
-            # Match based on field name keywords
-            if any(keyword in field_lower for keyword in ['danger', 'risk', 'threat']) and any(keyword in text_lower or keyword in location_lower for keyword in ['danger', 'risk', 'threat']):
-                return field_name
-            elif any(keyword in field_lower for keyword in ['opportunity', 'chance']) and any(keyword in text_lower or keyword in location_lower for keyword in ['opportunity', 'chance']):
-                return field_name
-            elif any(keyword in field_lower for keyword in ['strength', 'strong']) and any(keyword in text_lower or keyword in location_lower for keyword in ['strength', 'strong']):
-                return field_name
-            elif 'goal' in field_lower and ('goal' in text_lower or 'goal' in location_lower):
-                return field_name
-            elif any(keyword in field_lower for keyword in ['money', 'financial', 'finance']) and any(keyword in text_lower or keyword in location_lower for keyword in ['money', 'financial', '$', 'borrow']):
-                return field_name
-            elif any(keyword in field_lower for keyword in ['business', 'work', 'career', 'job']) and any(keyword in text_lower or keyword in location_lower for keyword in ['business', 'work', 'career', 'job']):
-                return field_name
-            elif any(keyword in field_lower for keyword in ['leisure', 'hobby', 'fun']) and any(keyword in text_lower or keyword in location_lower for keyword in ['leisure', 'hobby', 'fun']):
-                return field_name
-            elif 'health' in field_lower and 'health' in (text_lower + location_lower):
-                return field_name
-            elif 'family' in field_lower and 'family' in (text_lower + location_lower):
-                return field_name
+            # Try to match based on position if content doesn't give clear indication
+            if not field_type:
+                if any(pos in location_lower for pos in ['top', 'upper', 'first']):
+                    field_type = 'goals'
+                elif any(pos in location_lower for pos in ['middle', 'center']):
+                    field_type = 'now'
+                elif any(pos in location_lower for pos in ['bottom', 'lower', 'last']):
+                    field_type = 'todo'
+            
+            # Find the exact field name
+            if field_type:
+                target_field = f"{category}_{field_type}"
+                for field_name in available_fields.keys():
+                    if field_name.lower() == target_field:
+                        return field_name
+        
+        # Position-based fallback matching for columns
+        if any(pos in location_lower for pos in ['left', 'first column']):
+            # Money column
+            if any(pos in location_lower for pos in ['top', 'upper']):
+                return 'money_goals'
+            elif any(pos in location_lower for pos in ['middle', 'center']):
+                return 'money_now'
+            elif any(pos in location_lower for pos in ['bottom', 'lower']):
+                return 'money_todo'
+        elif any(pos in location_lower for pos in ['center left', 'second column']):
+            # Business column
+            if any(pos in location_lower for pos in ['top', 'upper']):
+                return 'business_goals'
+            elif any(pos in location_lower for pos in ['middle', 'center']):
+                return 'business_now'
+            elif any(pos in location_lower for pos in ['bottom', 'lower']):
+                return 'business_todo'
+        elif any(pos in location_lower for pos in ['center', 'middle column', 'third column']):
+            # Leisure column
+            if any(pos in location_lower for pos in ['top', 'upper']):
+                return 'leisure_goals'
+            elif any(pos in location_lower for pos in ['middle', 'center']):
+                return 'leisure_now'
+            elif any(pos in location_lower for pos in ['bottom', 'lower']):
+                return 'leisure_todo'
+        elif any(pos in location_lower for pos in ['center right', 'fourth column']):
+            # Health column
+            if any(pos in location_lower for pos in ['top', 'upper']):
+                return 'health_goals'
+            elif any(pos in location_lower for pos in ['middle', 'center']):
+                return 'health_now'
+            elif any(pos in location_lower for pos in ['bottom', 'lower']):
+                return 'health_todo'
+        elif any(pos in location_lower for pos in ['right', 'last column', 'fifth column']):
+            # Family column
+            if any(pos in location_lower for pos in ['top', 'upper']):
+                return 'family_goals'
+            elif any(pos in location_lower for pos in ['middle', 'center']):
+                return 'family_now'
+            elif any(pos in location_lower for pos in ['bottom', 'lower']):
+                return 'family_todo'
         
         return None
     

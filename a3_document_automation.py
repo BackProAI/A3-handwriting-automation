@@ -176,8 +176,20 @@ class A3DocumentProcessor:
                     output_filename = f"A3_Completed_{safe_filename}_{timestamp}.pdf"
                     output_path = Path("processed_documents") / output_filename
                     
-                    # Automatically populate template with extracted text
-                    final_pdf_path = self.template_processor.populate_template(all_results, output_path)
+                    # Use the existing custom template if available
+                    custom_template_path = Path("processed_documents/A3_Custom_Template.pdf")
+                    
+                    if custom_template_path.exists():
+                        print(f"🎯 Using your custom template: {custom_template_path}")
+                        final_pdf_path = self.template_processor.populate_template(
+                            all_results, 
+                            output_path, 
+                            base_template=custom_template_path
+                        )
+                    else:
+                        print(f"📝 Custom template not found, creating new template")
+                        final_pdf_path = self.template_processor.populate_template(all_results, output_path)
+                    
                     processing_info['output_pdf_path'] = final_pdf_path
                     
                 except Exception as e:
@@ -440,9 +452,11 @@ class A3AutomationUI:
                         self.status_queue.put(("message", f"\n🎉 COMPLETED A3 DOCUMENT CREATED"))
                         self.status_queue.put(("message", f"{'='*40}"))
                         field_type = "CUSTOM positioned" if self.processor.using_custom_fields else "default"
-                        self.status_queue.put(("message", f"✅ Created POPULATED A3 document with {field_type} text fields: {output_pdf.name}"))
+                        custom_template_path = Path("processed_documents/A3_Custom_Template.pdf")
+                        template_source = "existing CUSTOM template" if custom_template_path.exists() else f"{field_type} template"
+                        self.status_queue.put(("message", f"✅ Populated your {template_source}: {output_pdf.name}"))
                         self.status_queue.put(("message", f"📁 Location: {output_pdf}"))
-                        self.status_queue.put(("message", f"🎯 FULLY AUTOMATED - text automatically placed in transparent fields"))
+                        self.status_queue.put(("message", f"🎯 FULLY AUTOMATED - text automatically placed in your positioned fields"))
                         self.status_queue.put(("message", f"⏱️ Total processing time: {processing_info.get('total_processing_time', 0):.2f}s"))
                         
                         # Show what was extracted and mapped
