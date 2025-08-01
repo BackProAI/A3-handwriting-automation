@@ -155,23 +155,41 @@ class A3TemplateProcessor:
             
             print(f"🎯 Populating {len(field_mappings)} fields with extracted text...")
             
-            # Populate the form fields
+            # Populate the form fields with page-specific mapping
             populated_count = 0
+            
+            # Get page mapping for fields
+            field_to_page = {}
+            for page_key, fields in self.form_fields_config.items():
+                page_number = 0 if page_key == 'page_1' else 1  # Convert to 0-based indexing
+                for field in fields:
+                    field_to_page[field['name']] = page_number
+            
             for field_name, text_content in field_mappings.items():
                 if text_content.strip():
                     try:
-                        # Find and populate the field
-                        for page_num in range(len(doc)):
-                            page = doc[page_num]
+                        # Get the correct page for this field
+                        target_page_num = field_to_page.get(field_name)
+                        
+                        if target_page_num is not None and target_page_num < len(doc):
+                            page = doc[target_page_num]
                             widgets = page.widgets()
                             
+                            field_found = False
                             for widget in widgets:
                                 if widget.field_name == field_name:
                                     widget.field_value = text_content.strip()
                                     widget.update()
                                     populated_count += 1
-                                    print(f"   ✅ {field_name}: {text_content[:50]}...")
+                                    print(f"   ✅ Page {target_page_num + 1} - {field_name}: {text_content[:50]}...")
+                                    field_found = True
                                     break
+                            
+                            if not field_found:
+                                print(f"   ⚠️ Field '{field_name}' not found on Page {target_page_num + 1}")
+                        else:
+                            print(f"   ❌ Invalid page mapping for field '{field_name}'")
+                            
                     except Exception as e:
                         print(f"⚠️ Failed to populate field {field_name}: {e}")
             
@@ -206,7 +224,12 @@ class A3TemplateProcessor:
         
         print(f"\n🎯 SMART FIELD MAPPING")
         print(f"{'='*50}")
-        print(f"📋 Available fields: {list(available_fields.keys())}")
+        
+        # Show page-specific field counts
+        page1_fields = [name for name, page in available_fields.items() if page == 'page_1']
+        page2_fields = [name for name, page in available_fields.items() if page == 'page_2']
+        print(f"📋 Page 1 fields ({len(page1_fields)}): {', '.join(page1_fields[:3])}{'...' if len(page1_fields) > 3 else ''}")
+        print(f"📋 Page 2 fields ({len(page2_fields)}): {', '.join(page2_fields[:3])}{'...' if len(page2_fields) > 3 else ''}")
         
         for result in extracted_results:
             if not result.get('success', False):
@@ -215,21 +238,24 @@ class A3TemplateProcessor:
             page_num = result.get('page_number', 1)
             sections = result.get('sections', [])
             
-            print(f"\n📄 Processing Page {page_num} with {len(sections)} sections")
+            print(f"\n📄 PROCESSING PAGE {page_num} ({'='*30})")
+            print(f"   📝 Found {len(sections)} text sections to map")
             
             if page_num == 1:
-                # Page 1 mapping - try intelligent mapping to available fields
+                print(f"   🎯 Target: Page 1 fields only")
                 page_mappings = self._map_page1_sections(sections, available_fields)
                 field_mappings.update(page_mappings)
             elif page_num == 2:
-                # Page 2 mapping - try intelligent mapping to available fields
+                print(f"   🎯 Target: Page 2 fields only")
                 page_mappings = self._map_page2_sections(sections, available_fields)
                 field_mappings.update(page_mappings)
         
         print(f"\n✅ FINAL FIELD MAPPINGS:")
         print(f"{'='*50}")
         for field_name, text in field_mappings.items():
-            print(f"🎯 {field_name}: {text[:100]}{'...' if len(text) > 100 else ''}")
+            page_info = available_fields.get(field_name, 'unknown')
+            page_display = "Page 1" if page_info == 'page_1' else "Page 2" if page_info == 'page_2' else "Unknown"
+            print(f"🎯 [{page_display}] {field_name}: {text[:80]}{'...' if len(text) > 80 else ''}")
         
         return field_mappings
     
@@ -238,6 +264,9 @@ class A3TemplateProcessor:
         mappings = {}
         available_fields = available_fields or {}
         
+        # Filter to only Page 1 fields
+        page1_fields = {name: page for name, page in available_fields.items() if page == 'page_1'}
+        
         for i, section in enumerate(sections):
             text = section.get('text', '').strip()
             location = section.get('location', '').lower()
@@ -247,26 +276,26 @@ class A3TemplateProcessor:
             
             print(f"  📝 Section {i+1}: '{text[:50]}...' at '{location}'")
             
-            # Try to find the best matching field for this text
-            best_field = self._find_best_field_match(text, location, available_fields, page=1)
+            # Try to find the best matching field for this text (Page 1 only)
+            best_field = self._find_best_field_match(text, location, page1_fields, page=1)
             
             if best_field:
-                print(f"     ✅ Matched to field: '{best_field}'")
+                print(f"     ✅ Matched to Page 1 field: '{best_field}'")
                 if best_field in mappings:
                     mappings[best_field] += '\n' + text
                 else:
                     mappings[best_field] = text
             else:
-                # Fallback to generic mapping if no specific field found
-                generic_field = self._get_generic_page1_field(available_fields)
+                # Fallback to generic mapping if no specific field found (Page 1 only)
+                generic_field = self._get_generic_page1_field(page1_fields)
                 if generic_field:
-                    print(f"     🔄 Using fallback field: '{generic_field}'")
+                    print(f"     🔄 Using Page 1 fallback field: '{generic_field}'")
                     if generic_field in mappings:
                         mappings[generic_field] += '\n' + text
                     else:
                         mappings[generic_field] = text
                 else:
-                    print(f"     ❌ No field match found - text will be skipped")
+                    print(f"     ❌ No Page 1 field match found - text will be skipped")
         
         return mappings
     
@@ -275,6 +304,9 @@ class A3TemplateProcessor:
         mappings = {}
         available_fields = available_fields or {}
         
+        # Filter to only Page 2 fields
+        page2_fields = {name: page for name, page in available_fields.items() if page == 'page_2'}
+        
         for i, section in enumerate(sections):
             text = section.get('text', '').strip()
             location = section.get('location', '').lower()
@@ -284,26 +316,26 @@ class A3TemplateProcessor:
             
             print(f"  📝 Section {i+1}: '{text[:50]}...' at '{location}'")
             
-            # Try to find the best matching field for this text
-            best_field = self._find_best_field_match(text, location, available_fields, page=2)
+            # Try to find the best matching field for this text (Page 2 only)
+            best_field = self._find_best_field_match(text, location, page2_fields, page=2)
             
             if best_field:
-                print(f"     ✅ Matched to field: '{best_field}'")
+                print(f"     ✅ Matched to Page 2 field: '{best_field}'")
                 if best_field in mappings:
                     mappings[best_field] += '\n' + text
                 else:
                     mappings[best_field] = text
             else:
-                # Fallback to generic mapping if no specific field found
-                generic_field = self._get_generic_page2_field(available_fields)
+                # Fallback to generic mapping if no specific field found (Page 2 only)
+                generic_field = self._get_generic_page2_field(page2_fields)
                 if generic_field:
-                    print(f"     🔄 Using fallback field: '{generic_field}'")
+                    print(f"     🔄 Using Page 2 fallback field: '{generic_field}'")
                     if generic_field in mappings:
                         mappings[generic_field] += '\n' + text
                     else:
                         mappings[generic_field] = text
                 else:
-                    print(f"     ❌ No field match found - text will be skipped")
+                    print(f"     ❌ No Page 2 field match found - text will be skipped")
         
         return mappings
     
@@ -364,6 +396,43 @@ class A3TemplateProcessor:
     
     def _match_page2_field(self, text_lower: str, location_lower: str, available_fields: Dict[str, str]) -> str:
         """Match Page 2 text to specific field names based on content and position."""
+        
+        # 🎯 MANUAL POSITION TO FIELD MAPPING (User-defined)
+        # Order matters! Check most specific patterns first
+        manual_position_mapping = [
+            # Row 2 (GOALS) - Most specific first (handle both hyphen variants)
+            ("second row center-right", "health_goals"),  # With hyphen
+            ("second row center right", "health_goals"),  # Without hyphen  
+            ("second row center-left", "business_goals"),
+            ("second row center", "leisure_goals"),
+            ("second row left", "money_goals"),
+            ("second row right", "family_goals"),
+            
+            # Row 3 (NOW) - Most specific first (handle both hyphen variants)
+            ("third row center-right", "health_now"),
+            ("third row center right", "health_now"),
+            ("third row center-left", "business_now"),
+            ("third row center left", "business_now"),
+            ("third row center", "leisure_now"),
+            ("third row left", "money_now"),
+            ("third row right", "family_now"),
+            
+            # Row 4 (TO DO) - Most specific first (handle both hyphen variants)
+            ("fourth row center-right", "health_todo"),
+            ("fourth row center right", "health_todo"),
+            ("fourth row center-left", "business_todo"),
+            ("fourth row center left", "business_todo"),
+            ("fourth row center", "leisure_todo"),
+            ("fourth row left", "money_todo"),
+            ("fourth row right", "family_todo")
+        ]
+        
+        # Check manual mappings FIRST (highest priority) - most specific first
+        for position_key, field_name in manual_position_mapping:
+            if position_key in location_lower:
+                if field_name in available_fields:
+                    print(f"     🎯 Manual mapping: '{position_key}' → '{field_name}'")
+                    return field_name
         
         # Category-based matching (money, business, leisure, health, family)
         category = None
