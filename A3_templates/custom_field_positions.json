@@ -46,7 +46,8 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 10,
+      "line_height": 16
     },
     {
       "name": "Right_belowmid",
@@ -58,7 +59,8 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 10,
+      "line_height": 16
     },
     {
       "name": "Right_bottom",
@@ -70,7 +72,8 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 10,
+      "line_height": 16
     }
   ],
   "page_2": [

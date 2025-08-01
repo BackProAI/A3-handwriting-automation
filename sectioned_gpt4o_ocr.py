@@ -311,7 +311,302 @@ Return the extracted text directly, no JSON formatting needed. If absolutely no 
         
         return results
     
-    def process_document(self, document_path: Path) -> Dict[str, Any]:
+    def detect_and_reorder_pages(self, pdf_doc, manual_override: str = None) -> List[int]:
+        """
+        Analyze page content to detect which page is Page 1 vs Page 2.
+        Returns correct page order (e.g., [1, 0] if pages need swapping).
+        
+        Args:
+            pdf_doc: The PDF document
+            manual_override: "normal" or "reversed" to force detection result
+        """
+        print(f"\n🔍 ANALYZING PAGE CONTENT FOR CORRECT ORDER...")
+        print("=" * 50)
+        
+        # Handle manual override
+        if manual_override:
+            if manual_override.lower() == "reversed":
+                print(f"\n🔧 MANUAL OVERRIDE: Pages forced to REVERSED order")
+                return [1, 0]
+            elif manual_override.lower() == "normal":
+                print(f"\n🔧 MANUAL OVERRIDE: Pages forced to NORMAL order")
+                return [0, 1]
+        
+        if len(pdf_doc) < 2:
+            return [0]  # Only one page
+        
+        page_scores = []
+        
+        for page_num in range(min(2, len(pdf_doc))):
+            print(f"\n📄 Analyzing Page {page_num + 1}...")
+            
+            page = pdf_doc[page_num]
+            
+            # Extract text content for analysis
+            page_text = page.get_text().lower()
+            text_length = len(page_text.strip())
+            
+            print(f"   📝 Extracted {text_length} characters")
+            
+            # If no text extracted, try OCR on page image as fallback
+            if text_length < 50:  # Very little text
+                print(f"   🔍 Low text content, trying image analysis...")
+                try:
+                    # Convert page to image for OCR analysis
+                    mat = fitz.Matrix(1.5, 1.5)  # Lower res for quick analysis
+                    pix = page.get_pixmap(matrix=mat)
+                    
+                    import io
+                    from PIL import Image
+                    img_data = pix.tobytes("png")
+                    page_image = Image.open(io.BytesIO(img_data))
+                    
+                    # Quick OCR on small sections to get sample text
+                    width, height = page_image.size
+                    
+                    # Sample top-left area (likely to have headers/titles)
+                    sample_area = page_image.crop((0, 0, min(400, width), min(300, height)))
+                    
+                    # Use GPT-4o for quick text extraction
+                    quick_extraction = self._quick_text_extraction(sample_area)
+                    if quick_extraction.get("success") and quick_extraction.get("text"):
+                        page_text = quick_extraction["text"].lower()
+                        print(f"   ✅ OCR extracted: {len(page_text)} characters")
+                    else:
+                        print(f"   ⚠️ OCR extraction failed")
+                        
+                except Exception as e:
+                    print(f"   ❌ Image analysis failed: {e}")
+            
+            # Calculate Page 1 likelihood score
+            page1_score = 0
+            page2_score = 0
+            
+            # Page 1 indicators (circle-based content)
+            page1_keywords = [
+                'danger', 'eliminate', 'risk', 'threat', 'avoid', 'prevent',
+                'opportunit', 'focus', 'capture', 'chance', 'potential',
+                'strength', 'reinforce', 'maximi', 'strong', 'advantage',
+                'grateful', 'appreciate', 'blessing', 'thankful', 'main', 'primary'
+            ]
+            
+            # Page 2 indicators (grid-based content)
+            page2_keywords = [
+                'goal', 'objective', 'target', 'aim', 'goals',
+                'money', 'financial', 'business', 'health', 'family', 'leisure',
+                'now', 'current', 'today', 'present',
+                'todo', 'to do', 'action', 'next step', 'steps'
+            ]
+            
+            # Count keyword matches with context weighting
+            matched_p1_keywords = []
+            for keyword in page1_keywords:
+                if keyword in page_text:
+                    page1_score += 1
+                    matched_p1_keywords.append(keyword)
+            
+            matched_p2_keywords = []
+            for keyword in page2_keywords:
+                if keyword in page_text:
+                    page2_score += 1
+                    matched_p2_keywords.append(keyword)
+            
+            # Look for structural patterns
+            if any(pattern in page_text for pattern in ['row', 'column', 'grid']):
+                page2_score += 2
+                matched_p2_keywords.append('[structure: grid]')
+            
+            if any(pattern in page_text for pattern in ['circle', 'main', 'primary']):
+                page1_score += 2
+                matched_p1_keywords.append('[structure: circles]')
+                
+            # Look for specific field patterns (higher weight)
+            if any(pattern in page_text for pattern in ['dangers to be eliminated', 'opportunities to be focused', 'strengths to be reinforced']):
+                page1_score += 5
+                matched_p1_keywords.append('[specific: A3 page1 fields]')
+                
+            if any(pattern in page_text for pattern in ['health goals', 'money goals', 'family goals', 'business goals', 'leisure goals']):
+                page2_score += 5
+                matched_p2_keywords.append('[specific: A3 page2 fields]')
+            
+            # Positional analysis - Page 2 typically has more structured/tabular content
+            line_count = len([l for l in page_text.split('\n') if l.strip()])
+            if line_count > 20:  # Lots of lines suggests grid structure
+                page2_score += 1
+                matched_p2_keywords.append('[layout: many lines]')
+            
+            page_scores.append({
+                'page_num': page_num,
+                'page1_score': page1_score,
+                'page2_score': page2_score,
+                'likely_page': 1 if page1_score > page2_score else 2,
+                'p1_matches': matched_p1_keywords,
+                'p2_matches': matched_p2_keywords
+            })
+            
+            print(f"   📊 Page {page_num + 1} Analysis:")
+            print(f"      Page 1 Score: {page1_score} (matches: {matched_p1_keywords})")
+            print(f"      Page 2 Score: {page2_score} (matches: {matched_p2_keywords})")
+            print(f"      Likely Type: Page {1 if page1_score > page2_score else 2}")
+        
+        # Determine correct order
+        if len(page_scores) == 2:
+            first_page = page_scores[0]
+            second_page = page_scores[1]
+            
+            # Special case: if both pages have equal scores, use visual layout analysis
+            if first_page['page1_score'] == first_page['page2_score'] and second_page['page1_score'] == second_page['page2_score']:
+                print(f"\n⚠️ INCONCLUSIVE TEXT DETECTION - Trying visual layout analysis...")
+                
+                # Try visual analysis as last resort
+                try:
+                    visual_result = self._analyze_visual_layout(pdf_doc)
+                    if visual_result is not None:
+                        print(f"   ✅ Visual analysis suggests: {visual_result}")
+                        return visual_result
+                except Exception as e:
+                    print(f"   ❌ Visual analysis failed: {e}")
+                
+                print(f"\n⚠️ ALL DETECTION METHODS FAILED")
+                print(f"   📄 Using default order - verify manually if needed")
+                print(f"   💡 Use manual override: pass manual_override='reversed' if pages are swapped")
+                return [0, 1]  # Assume correct order
+            
+            # Check if pages are in wrong order
+            if first_page['likely_page'] == 2 and second_page['likely_page'] == 1:
+                print(f"\n🔄 PAGES DETECTED IN REVERSE ORDER!")
+                print(f"   📄 Physical Page 1 appears to be logical Page 2")
+                print(f"   📄 Physical Page 2 appears to be logical Page 1")
+                print(f"   ✅ Will process in corrected order: [Page 2, Page 1]")
+                return [1, 0]  # Swap order
+            else:
+                print(f"\n✅ PAGES IN CORRECT ORDER")
+                print(f"   📄 Page 1 → Page 1")
+                print(f"   📄 Page 2 → Page 2")
+                return [0, 1]  # Normal order
+        
+        return [0]  # Single page fallback
+    
+    def _analyze_visual_layout(self, pdf_doc) -> List[int]:
+        """
+        Analyze visual layout patterns when text detection fails.
+        Page 1 typically has circular/organic layouts, Page 2 has grid layouts.
+        """
+        print(f"   🎨 Analyzing visual layout patterns...")
+        
+        # Convert pages to images for visual analysis
+        layout_scores = []
+        
+        for page_num in range(min(2, len(pdf_doc))):
+            page = pdf_doc[page_num]
+            
+            # Convert to image
+            mat = fitz.Matrix(1.0, 1.0)  # Normal resolution
+            pix = page.get_pixmap(matrix=mat)
+            
+            import io
+            from PIL import Image
+            img_data = pix.tobytes("png")
+            page_image = Image.open(io.BytesIO(img_data))
+            
+            # Use GPT-4o to analyze layout characteristics
+            layout_prompt = """Analyze this page layout and determine if it looks more like:
+A) Page 1: Circular/organic content areas, narrative text sections, flowing layout
+B) Page 2: Grid-based layout, structured tables, organized columns and rows
+
+Respond with just 'A' or 'B' and a brief reason."""
+            
+            layout_analysis = self._layout_analysis(page_image, layout_prompt)
+            
+            if layout_analysis.get("success"):
+                analysis_text = layout_analysis.get("text", "").upper()
+                if "A" in analysis_text and "B" not in analysis_text:
+                    layout_scores.append(1)  # Page 1 type
+                    print(f"      Page {page_num + 1}: Likely Page 1 (organic layout)")
+                elif "B" in analysis_text and "A" not in analysis_text:
+                    layout_scores.append(2)  # Page 2 type  
+                    print(f"      Page {page_num + 1}: Likely Page 2 (grid layout)")
+                else:
+                    layout_scores.append(0)  # Uncertain
+                    print(f"      Page {page_num + 1}: Layout unclear")
+            else:
+                layout_scores.append(0)
+                print(f"      Page {page_num + 1}: Analysis failed")
+        
+        # Determine order based on layout analysis
+        if len(layout_scores) == 2:
+            if layout_scores[0] == 2 and layout_scores[1] == 1:
+                print(f"   🔄 Visual analysis suggests REVERSED order")
+                return [1, 0]
+            elif layout_scores[0] == 1 and layout_scores[1] == 2:
+                print(f"   ✅ Visual analysis suggests NORMAL order")
+                return [0, 1]
+        
+        return None  # Inconclusive
+    
+    def _quick_text_extraction(self, image: Image.Image) -> Dict[str, Any]:
+        """Quick text extraction for page classification"""
+        base64_image = self.encode_image(image)
+        
+        prompt = "Extract any visible text from this image section. Just return the text, no formatting."
+        
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}", "detail": "low"}}
+                    ]
+                }
+            ],
+            "max_tokens": 300,
+            "temperature": 0
+        }
+        
+        try:
+            response = requests.post(self.api_url, headers=self.headers, json=payload, timeout=15)
+            if response.status_code == 200:
+                result = response.json()
+                text = result['choices'][0]['message']['content'].strip()
+                return {"success": True, "text": text}
+        except Exception as e:
+            print(f"   ❌ Quick extraction error: {e}")
+        
+        return {"success": False, "text": ""}
+    
+    def _layout_analysis(self, image: Image.Image, prompt: str) -> Dict[str, Any]:
+        """Visual layout analysis for page classification"""
+        base64_image = self.encode_image(image)
+        
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}", "detail": "low"}}
+                    ]
+                }
+            ],
+            "max_tokens": 100,
+            "temperature": 0
+        }
+        
+        try:
+            response = requests.post(self.api_url, headers=self.headers, json=payload, timeout=15)
+            if response.status_code == 200:
+                result = response.json()
+                text = result['choices'][0]['message']['content'].strip()
+                return {"success": True, "text": text}
+        except Exception as e:
+            print(f"   ❌ Layout analysis error: {e}")
+        
+        return {"success": False, "text": ""}
+    
+    def process_document(self, document_path: Path, manual_page_order: str = None) -> Dict[str, Any]:
         """Process entire document using sectioned approach."""
         print(f"\n🎯 SECTIONED GPT-4o OCR: {document_path}")
         print("="*80)
@@ -333,8 +628,15 @@ Return the extracted text directly, no JSON formatting needed. If absolutely no 
                 
                 pdf_doc = fitz.open(document_path)
                 
-                for page_num in range(min(2, len(pdf_doc))):  # Max 2 pages
-                    page = pdf_doc[page_num]
+                # Detect correct page order based on content
+                correct_order = self.detect_and_reorder_pages(pdf_doc, manual_page_order)
+                print(f"\n📋 Processing pages in order: {[f'Page {i+1}' for i in correct_order]}")
+                
+                for logical_page_num, physical_page_num in enumerate(correct_order):
+                    if physical_page_num >= len(pdf_doc):
+                        continue
+                        
+                    page = pdf_doc[physical_page_num]
                     
                     # Convert page to high-resolution image
                     mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better OCR
@@ -345,19 +647,20 @@ Return the extracted text directly, no JSON formatting needed. If absolutely no 
                     img_data = pix.tobytes("png")
                     page_image = Image.open(io.BytesIO(img_data))
                     
-                    print(f"\n📄 Processing PDF Page {page_num + 1}")
+                    print(f"\n📄 Processing Logical Page {logical_page_num + 1} (Physical Page {physical_page_num + 1})")
                     print(f"   📐 Original image size: {page_image.width}x{page_image.height}")
                     
                     # Standardize page size to match reference template
                     page_image = self.standardize_page_size(page_image)
                     print(f"   📐 Standardized image size: {page_image.width}x{page_image.height}")
                     
-                    # Process sections for this page
-                    page_results = self.process_page_sections(page_image, page_num + 1)
+                    # Process sections for this page (use logical page number for sectioning)
+                    page_results = self.process_page_sections(page_image, logical_page_num + 1)
                     
                     # Add page info to results
                     for result in page_results:
-                        result["page_number"] = page_num + 1
+                        result["page_number"] = logical_page_num + 1  # Use logical page number
+                        result["physical_page"] = physical_page_num + 1  # Track physical page too
                         result["file_name"] = document_path.name
                         result["file_type"] = "PDF"
                     

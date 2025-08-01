@@ -130,6 +130,7 @@ class A3SectionedProcessor:
         print(f"   📄 Success rate: {(populated_fields/total_fields*100):.1f}%" if total_fields > 0 else "   📄 Success rate: 0%")
         print(f"   💾 Saved: {output_path}")
         
+        # Page reordering info is displayed during the OCR processing phase
         return output_path
     
     def convert_sectioned_results_to_standard_format(self, sectioned_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
