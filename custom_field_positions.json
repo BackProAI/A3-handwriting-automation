@@ -10,7 +10,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Opportunities to be focused on & captured",
@@ -22,7 +22,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Strengths to be reinforced & maximised",
@@ -34,55 +34,46 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Right_mid",
       "rect": [
         301.71999999999997,
-        150.85999999999999,
+        138.79999999999998,
         559.77,
-        309.65999999999997
+        305.68999999999994
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12,
+      "line_height": 16
     },
     {
       "name": "Right_belowmid",
       "rect": [
         301.71999999999997,
-        365.24,
+        345.39,
         561.755,
-        526.025
+        514.115
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12,
+      "line_height": 16
     },
     {
       "name": "Right_bottom",
       "rect": [
         303.705,
-        581.605,
+        567.71,
         561.755,
-        744.375
+        736.435
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
-    },
-    {
-      "name": "more4lifesing",
-      "rect": [
-        782.09,
-        359.28499999999997,
-        1012.35,
-        422.805
-      ],
-      "type": "text",
-      "multiline": true,
-      "fontsize": 10
+      "fontsize": 12,
+      "line_height": 16
     }
   ],
   "page_2": [
@@ -96,7 +87,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "money_now",
@@ -108,7 +99,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "money_todo",
@@ -120,7 +111,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_goals",
@@ -132,7 +123,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_now",
@@ -144,7 +135,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_todo",
@@ -156,7 +147,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_goals",
@@ -168,7 +159,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_now",
@@ -180,7 +171,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_todo",
@@ -192,7 +183,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_goals",
@@ -204,7 +195,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_now",
@@ -216,7 +207,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_todo",
@@ -228,7 +219,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_goals",
@@ -240,7 +231,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_now",
@@ -252,7 +243,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_todo",
@@ -264,7 +255,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     }
   ]
 }
