@@ -54,14 +54,14 @@ def build_executable():
         print(f"❌ Main file {main_file} not found!")
         return False
     
-    # Build PyInstaller command
+    # Build PyInstaller command with antivirus-friendly options
     cmd = [
         sys.executable, "-m", "PyInstaller",  # Use python -m PyInstaller instead of direct pyinstaller
         "--onefile",                    # Single executable file
-        # "--windowed",                 # Commented out to show console for debugging
+        "--windowed",                   # No console window (GUI only)
         "--name", app_name,             # Name of the executable
-        "--icon", "icon.ico",           # App icon (if exists)
         "--clean",                      # Clean PyInstaller cache
+        "--noupx",                      # Don't use UPX compression (reduces false positives)
     ]
     
     # Add data files
