@@ -27,6 +27,9 @@ class A3Launcher:
         self.app_dir = Path(__file__).parent
         self.temp_dir = self.app_dir / "temp_update"
         
+        # GitHub authentication
+        self.github_token = self.get_github_token()
+        
         # Create GUI
         self.setup_gui()
         
@@ -36,6 +39,38 @@ class A3Launcher:
         if version_file.exists():
             return version_file.read_text().strip()
         return "1.0.0"  # Default version
+    
+    def get_github_token(self):
+        """Get GitHub Personal Access Token for API authentication"""
+        # Try to get token from .env file first
+        env_file = self.app_dir / ".env"
+        if env_file.exists():
+            try:
+                with open(env_file, 'r') as f:
+                    for line in f:
+                        if line.startswith('GITHUB_TOKEN='):
+                            token = line.split('=', 1)[1].strip()
+                            if token:
+                                return token
+            except Exception as e:
+                print(f"Error reading GitHub token from .env: {e}")
+        
+        # Try environment variable
+        token = os.environ.get('GITHUB_TOKEN')
+        if token:
+            return token
+        
+        # If no token found, prompt user to add it
+        return None
+    
+    def get_auth_headers(self):
+        """Get authentication headers for GitHub API"""
+        if self.github_token:
+            return {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        return {'Accept': 'application/vnd.github.v3+json'}
     
     def setup_gui(self):
         """Create the launcher GUI"""
@@ -73,7 +108,10 @@ class A3Launcher:
         button_frame.grid(row=4, column=0, columnspan=2, pady=(20, 0))
         
         # Check for updates button
-        self.update_btn = ttk.Button(button_frame, text="Check for Updates", command=self.check_updates_threaded)
+        if self.github_token:
+            self.update_btn = ttk.Button(button_frame, text="Check for Updates", command=self.check_updates_threaded)
+        else:
+            self.update_btn = ttk.Button(button_frame, text="Updates: No Token", state='disabled')
         self.update_btn.grid(row=0, column=0, padx=(0, 10))
         
         # Launch button
@@ -81,9 +119,16 @@ class A3Launcher:
         self.launch_btn.grid(row=0, column=1, padx=(10, 0))
         
         # Auto-update checkbox
-        self.auto_update_var = tk.BooleanVar(value=False)  # Disabled until GitHub release exists
-        auto_update_cb = ttk.Checkbutton(main_frame, text="Auto-check for updates on startup", 
-                                        variable=self.auto_update_var)
+        self.auto_update_var = tk.BooleanVar(value=bool(self.github_token))
+        if self.github_token:
+            auto_update_text = "Auto-check for updates on startup"
+            checkbox_state = 'normal'
+        else:
+            auto_update_text = "Auto-updates require GitHub token"
+            checkbox_state = 'disabled'
+        
+        auto_update_cb = ttk.Checkbutton(main_frame, text=auto_update_text, 
+                                        variable=self.auto_update_var, state=checkbox_state)
         auto_update_cb.grid(row=5, column=0, columnspan=2, pady=(20, 0))
         
         # Configure grid weights
@@ -122,8 +167,11 @@ class A3Launcher:
             self.update_status("Checking for updates...", "blue")
             self.show_progress(True)
             
-            # Get latest release info from GitHub
-            response = requests.get(self.github_api_url, timeout=10)
+            # Get authentication headers
+            headers = self.get_auth_headers()
+            
+            # Get latest release info from GitHub with authentication
+            response = requests.get(self.github_api_url, headers=headers, timeout=10)
             response.raise_for_status()
             
             release_data = response.json()
@@ -180,8 +228,9 @@ class A3Launcher:
             # Create temp directory
             self.temp_dir.mkdir(exist_ok=True)
             
-            # Download the update
-            response = requests.get(download_url, stream=True)
+            # Download the update with authentication
+            headers = self.get_auth_headers()
+            response = requests.get(download_url, headers=headers, stream=True)
             response.raise_for_status()
             
             zip_path = self.temp_dir / "update.zip"
@@ -273,8 +322,8 @@ class A3Launcher:
     
     def run(self):
         """Run the launcher"""
-        # Auto-check for updates on startup if enabled
-        if self.auto_update_var.get():
+        # Auto-check for updates on startup if enabled and token available
+        if self.github_token and self.auto_update_var.get():
             self.root.after(1000, self.check_updates_threaded)  # Check after 1 second
         
         self.root.mainloop()
