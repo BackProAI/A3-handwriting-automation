@@ -46,6 +46,10 @@ def build_executable():
         ("field_positioning_tool.py", "."),
         ("create_pdf_template.py", "."),
         ("manual_page_order_tool.py", "."),              # ← Manual page ordering tool
+        ("create_desktop_launcher.bat", "."),            # ← Windows desktop launcher creator
+        ("create_desktop_launcher.ps1", "."),            # ← PowerShell desktop launcher creator
+        ("install_desktop_app.py", "."),                 # ← Universal desktop app installer
+        ("INSTALLATION_GUIDE.md", "."),                  # ← User installation instructions
         ("setup_api_key.py", "."),                       # ← API key setup script
     ]
     

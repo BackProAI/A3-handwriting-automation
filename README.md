@@ -1,6 +1,6 @@
-# More4Life A3 Handwriting to Text Recognition
+# A3 Document Automation - Desktop Application
 
-🚀 **Production-ready A3 document automation system** using Microsoft's TrOCR Large Handwritten model for converting handwritten A3 documents to digital text.
+🚀 **Production-ready A3 document automation system** using GPT-4o Vision API for converting handwritten A3 documents to digital text with custom PDF template population.
 
 ## 📋 Project Overview
 
@@ -11,28 +11,40 @@ This project automates the process of:
 
 ### 🎯 Key Features
 
-- ✅ **High Accuracy**: Uses TrOCR Large Handwritten model (~90%+ accuracy)
-- ✅ **A3 Optimized**: Specifically designed for A3 document processing
-- ✅ **Multi-Format**: Supports both images (.jpg, .png, etc.) and PDFs
-- ✅ **PDF Processing**: Automatic page conversion and multi-page handling
-- ✅ **Enhanced Console Output**: Full extracted text displayed immediately in terminal
-- ✅ **Production Ready**: Batch processing, error handling, logging
-- ✅ **Secure**: Safe token management and environment setup
-- ✅ **More4Life Integration**: Customized for More4Life workflows
+- ✅ **High Accuracy**: Uses GPT-4o Vision API for superior handwriting recognition
+- ✅ **Desktop Application**: Professional launcher with auto-update functionality
+- ✅ **Custom PDF Templates**: Automatically populates A3_Custom_Template.pdf fields
+- ✅ **Manual Sectioning**: Precise OCR with user-defined document sections
+- ✅ **Page Detection**: Automatic page ordering and content analysis
+- ✅ **Multi-Format**: Supports images (.jpg, .png) and PDFs
+- ✅ **Field Positioning**: Interactive tools for custom field placement
+- ✅ **Auto-Updates**: GitHub integration for seamless version management
+- ✅ **More4Life Ready**: Pre-configured for deployment and production use
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### **🖥️ Desktop Application (Recommended)**
+
+1. **Download:** [Latest Release ZIP](https://github.com/BackProAI/A3-handwriting-automation/archive/refs/heads/main.zip)
+2. **Extract** the ZIP file to any folder
+3. **Create Desktop Launcher:**
+   ```bash
+   # Windows - Double-click:
+   create_desktop_launcher.bat
+   
+   # All systems - Double-click:
+   install_desktop_app.py
+   ```
+4. **Launch:** Double-click desktop shortcut "A3 Document Automation"
+
+### **🐍 Python Source Installation**
 
 ```bash
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Set up your Hugging Face token securely
-python setup_token.py
-
-# Download the TrOCR model
-python download_trocr_model.py
+# Launch the application
+python main_launcher.py
 ```
 
 ### 2. Test the Setup
