@@ -18,24 +18,52 @@ import fitz  # PyMuPDF
 try:
     from dotenv import load_dotenv
     load_dotenv()
-except ImportError:
-    # Fallback: manually load .env file
+except (ImportError, UnicodeDecodeError) as e:
+    print(f"⚠️ dotenv error ({e}), using manual .env loading...")
+    # Fallback: manually load .env file with proper encoding
     env_file = Path(".env")
     if env_file.exists():
-        with open(env_file) as f:
-            for line in f:
-                if line.strip() and not line.startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    os.environ[key] = value
+        try:
+            # Try multiple encodings to handle various file formats
+            for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+                try:
+                    with open(env_file, 'r', encoding=encoding) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith('#') and '=' in line:
+                                key, value = line.split('=', 1)
+                                key = key.strip()
+                                value = value.strip()
+                                # Remove quotes if present
+                                if value.startswith('"') and value.endswith('"'):
+                                    value = value[1:-1]
+                                elif value.startswith("'") and value.endswith("'"):
+                                    value = value[1:-1]
+                                os.environ[key] = value
+                    print(f"✅ Successfully loaded .env with {encoding} encoding")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                print(f"❌ Failed to read .env file with any encoding")
+        except Exception as e:
+            print(f"❌ Error loading .env manually: {e}")
+    else:
+        print(f"⚠️ No .env file found at {env_file}")
+except Exception as e:
+    print(f"❌ Unexpected error loading environment: {e}")
 
 class SectionedGPT4oOCR:
     """GPT-4o OCR with manual section definitions for consistent results."""
     
     def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json"):
         """Initialize sectioned OCR with API key and section configuration."""
+        # Specifically get OpenAI API key (not GitHub token)
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
-            raise ValueError("OpenAI API key required. Set OPENAI_API_KEY environment variable or pass api_key parameter.")
+            print(f"❌ OpenAI API key not found in environment variables")
+            print(f"💡 Available env vars: {list(os.environ.keys())}")
+            raise ValueError("OpenAI API key required. Set OPENAI_API_KEY in .env file or pass api_key parameter.")
         
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.headers = {
