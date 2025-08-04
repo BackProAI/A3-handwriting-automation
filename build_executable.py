@@ -46,6 +46,7 @@ def build_executable():
         ("field_positioning_tool.py", "."),
         ("create_pdf_template.py", "."),
         ("manual_page_order_tool.py", "."),              # ← Manual page ordering tool
+        ("setup_api_key.py", "."),                       # ← API key setup script
     ]
     
     # Check if main file exists

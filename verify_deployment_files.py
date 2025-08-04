@@ -35,6 +35,7 @@ def verify_deployment_files():
         ("field_positioning_tool.py", "file", "Field positioning tool"),
         ("create_pdf_template.py", "file", "PDF template generator"),
         ("manual_page_order_tool.py", "file", "Manual page ordering"),
+        ("setup_api_key.py", "file", "Secure API key setup tool"),
         
         # Build files
         ("build_executable.py", "file", "Executable build script"),
