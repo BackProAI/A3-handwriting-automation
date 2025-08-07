@@ -37,7 +37,17 @@ class A3Launcher:
         """Get current local version from version.txt"""
         version_file = Path(__file__).parent / "version.txt"
         if version_file.exists():
-            return version_file.read_text().strip()
+            try:
+                # Try UTF-8 first, then fallback to other encodings
+                for encoding in ['utf-8', 'utf-8-sig', 'latin-1']:
+                    try:
+                        return version_file.read_text(encoding=encoding).strip()
+                    except UnicodeDecodeError:
+                        continue
+                # If all encodings fail, return default
+                return "1.0.0"
+            except Exception:
+                return "1.0.0"
         return "1.0.0"  # Default version
     
     def get_github_token(self):
@@ -211,10 +221,23 @@ class A3Launcher:
             self.launch_btn.config(state='normal')
             
     def is_newer_version(self, version1, version2):
-        """Compare version strings (simple comparison)"""
+        """Compare version strings (robust comparison)"""
         def version_tuple(v):
-            return tuple(map(int, v.split('.')))
-        return version_tuple(version1) > version_tuple(version2)
+            try:
+                # Clean version string and split
+                clean_v = ''.join(c for c in str(v) if c.isdigit() or c == '.')
+                parts = clean_v.split('.')
+                # Convert to integers, pad with zeros if needed
+                return tuple(int(part) if part.isdigit() else 0 for part in parts[:3])
+            except (ValueError, TypeError):
+                # If parsing fails, return a default tuple
+                return (0, 0, 0)
+        
+        try:
+            return version_tuple(version1) > version_tuple(version2)
+        except Exception:
+            # If comparison fails, assume no update needed
+            return False
     
     def download_and_install_update(self, release_data):
         """Download and install the update"""
