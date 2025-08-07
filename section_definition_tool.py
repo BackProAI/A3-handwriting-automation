@@ -32,6 +32,14 @@ class A3SectionDefiner:
         self.current_rect = None
         self.selected_section = None
         
+        # Resize state
+        self.resizing = False
+        self.resize_handle = None
+        self.resize_section = None
+        self.resize_handles = []
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        
         self.setup_ui()
         
     def setup_ui(self):
@@ -92,11 +100,12 @@ class A3SectionDefiner:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # Bind canvas events
-        self.canvas.bind("<Button-1>", self.start_section)
-        self.canvas.bind("<B1-Motion>", self.draw_section)
-        self.canvas.bind("<ButtonRelease-1>", self.end_section)
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<B1-Motion>", self.on_drag)
+        self.canvas.bind("<ButtonRelease-1>", self.on_release)
         self.canvas.bind("<Double-Button-1>", self.select_section)
         self.canvas.bind("<Button-3>", self.delete_section)  # Right click to delete
+        self.canvas.bind("<Motion>", self.on_mouse_move)  # For cursor changes
         
         # Right panel - Section management
         right_panel = ttk.Frame(content_frame)
@@ -162,7 +171,9 @@ class A3SectionDefiner:
         instructions = """
 • Load your A3 template PDF
 • Switch between Page 1 and Page 2
-• Click and drag to define sections
+• Click and drag to define new sections
+• Click on existing sections to select
+• Drag resize handles to adjust size
 • Double-click to select/edit sections
 • Right-click to delete sections
 • Name each section descriptively
@@ -310,6 +321,56 @@ class A3SectionDefiner:
         except ValueError:
             pass
     
+    def on_click(self, event):
+        """Handle mouse click - either start drawing or start resizing."""
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        
+        # Check if clicking on a resize handle
+        handle_info = self.get_resize_handle_at(x, y)
+        if handle_info:
+            self.start_resize(event, handle_info)
+            return
+        
+        # Check if clicking inside an existing section
+        section_info = self.get_section_at(x, y)
+        if section_info:
+            self.start_move_section(event, section_info)
+            return
+        
+        # Otherwise, start drawing a new section
+        self.start_section(event)
+    
+    def on_drag(self, event):
+        """Handle mouse drag - either draw, resize, or move."""
+        if self.resizing:
+            self.resize_section_handle(event)
+        elif self.drawing:
+            self.draw_section(event)
+    
+    def on_release(self, event):
+        """Handle mouse release - finish current operation."""
+        if self.resizing:
+            self.end_resize(event)
+        elif self.drawing:
+            self.end_section(event)
+    
+    def on_mouse_move(self, event):
+        """Handle mouse movement for cursor changes."""
+        if self.drawing or self.resizing:
+            return
+        
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        
+        # Check if over a resize handle
+        handle_info = self.get_resize_handle_at(x, y)
+        if handle_info:
+            cursor = self.get_resize_cursor(handle_info[1])
+            self.canvas.configure(cursor=cursor)
+        else:
+            self.canvas.configure(cursor="crosshair")
+    
     def start_section(self, event):
         """Start drawing a new section."""
         self.drawing = True
@@ -381,6 +442,9 @@ class A3SectionDefiner:
         """Draw all existing sections for current page."""
         page_key = f"page_{self.current_page}"
         
+        # Clear existing resize handles
+        self.clear_resize_handles()
+        
         for section in self.sections[page_key]:
             # Convert PDF coordinates back to canvas coordinates
             pdf_rect = section["rect"]
@@ -409,6 +473,9 @@ class A3SectionDefiner:
             # Update section with canvas IDs
             section["canvas_id"] = canvas_id
             section["text_id"] = text_id
+            
+            # Create resize handles for this section
+            self.create_resize_handles(section)
     
     def update_section_list(self):
         """Update the section listbox."""
@@ -652,15 +719,228 @@ class A3SectionDefiner:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load sections: {e}")
     
+    def create_resize_handles(self, section):
+        """Create resize handles for a section."""
+        if "canvas_id" not in section:
+            return
+        
+        # Get section coordinates
+        pdf_rect = section["rect"]
+        x1 = pdf_rect[0] * self.canvas_scale
+        y1 = pdf_rect[1] * self.canvas_scale
+        x2 = pdf_rect[2] * self.canvas_scale
+        y2 = pdf_rect[3] * self.canvas_scale
+        
+        handle_size = 6
+        handles = {}
+        
+        # Create 8 resize handles (corners and edges)
+        handle_positions = {
+            'nw': (x1, y1),      # Top-left
+            'n': ((x1+x2)/2, y1),  # Top-center
+            'ne': (x2, y1),      # Top-right
+            'e': (x2, (y1+y2)/2),  # Right-center
+            'se': (x2, y2),      # Bottom-right
+            's': ((x1+x2)/2, y2),  # Bottom-center
+            'sw': (x1, y2),      # Bottom-left
+            'w': (x1, (y1+y2)/2)   # Left-center
+        }
+        
+        for handle_type, (hx, hy) in handle_positions.items():
+            handle_id = self.canvas.create_rectangle(
+                hx - handle_size//2, hy - handle_size//2,
+                hx + handle_size//2, hy + handle_size//2,
+                fill="white", outline="blue", width=1
+            )
+            handles[handle_type] = handle_id
+        
+        section["resize_handles"] = handles
+        
+        # Add to global handles list for easy lookup
+        for handle_type, handle_id in handles.items():
+            self.resize_handles.append((handle_id, handle_type, section))
+    
+    def clear_resize_handles(self):
+        """Clear all resize handles."""
+        for handle_id, _, _ in self.resize_handles:
+            self.canvas.delete(handle_id)
+        self.resize_handles = []
+        
+        # Clear handles from sections
+        for page_key in self.sections:
+            for section in self.sections[page_key]:
+                if "resize_handles" in section:
+                    del section["resize_handles"]
+    
+    def get_resize_handle_at(self, x, y):
+        """Get resize handle at given coordinates."""
+        for handle_id, handle_type, section in self.resize_handles:
+            bbox = self.canvas.bbox(handle_id)
+            if bbox and bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+                return (section, handle_type, handle_id)
+        return None
+    
+    def get_section_at(self, x, y):
+        """Get section at given coordinates."""
+        page_key = f"page_{self.current_page}"
+        
+        for section in self.sections[page_key]:
+            rect = section["rect"]
+            canvas_x1 = rect[0] * self.canvas_scale
+            canvas_y1 = rect[1] * self.canvas_scale
+            canvas_x2 = rect[2] * self.canvas_scale
+            canvas_y2 = rect[3] * self.canvas_scale
+            
+            if canvas_x1 <= x <= canvas_x2 and canvas_y1 <= y <= canvas_y2:
+                return section
+        return None
+    
+    def get_resize_cursor(self, handle_type):
+        """Get appropriate cursor for resize handle."""
+        cursor_map = {
+            'nw': 'top_left_corner',
+            'n': 'top_side',
+            'ne': 'top_right_corner',
+            'e': 'right_side',
+            'se': 'bottom_right_corner',
+            's': 'bottom_side',
+            'sw': 'bottom_left_corner',
+            'w': 'left_side'
+        }
+        return cursor_map.get(handle_type, 'arrow')
+    
+    def start_resize(self, event, handle_info):
+        """Start resizing a section."""
+        self.resizing = True
+        self.resize_section, self.resize_handle, _ = handle_info
+        self.drag_start_x = self.canvas.canvasx(event.x)
+        self.drag_start_y = self.canvas.canvasy(event.y)
+        
+        print(f"🔄 Started resizing section '{self.resize_section['name']}' using {self.resize_handle} handle")
+    
+    def start_move_section(self, event, section):
+        """Start moving a section."""
+        # For now, just select the section
+        # Moving functionality can be added later if needed
+        page_key = f"page_{self.current_page}"
+        section_idx = self.sections[page_key].index(section)
+        
+        self.section_listbox.selection_clear(0, tk.END)
+        self.section_listbox.selection_set(section_idx)
+        self.highlight_section(None)
+    
+    def resize_section_handle(self, event):
+        """Resize section by dragging handle."""
+        if not self.resizing or not self.resize_section:
+            return
+        
+        current_x = self.canvas.canvasx(event.x)
+        current_y = self.canvas.canvasy(event.y)
+        
+        # Get current section rect in PDF coordinates
+        rect = self.resize_section["rect"]
+        pdf_x1, pdf_y1, pdf_x2, pdf_y2 = rect
+        
+        # Convert mouse position to PDF coordinates
+        pdf_mouse_x = current_x / self.canvas_scale
+        pdf_mouse_y = current_y / self.canvas_scale
+        
+        # Update rectangle based on handle type
+        if 'n' in self.resize_handle:  # Top edge
+            pdf_y1 = pdf_mouse_y
+        if 's' in self.resize_handle:  # Bottom edge
+            pdf_y2 = pdf_mouse_y
+        if 'w' in self.resize_handle:  # Left edge
+            pdf_x1 = pdf_mouse_x
+        if 'e' in self.resize_handle:  # Right edge
+            pdf_x2 = pdf_mouse_x
+        
+        # Ensure minimum size
+        min_size = 20 / self.canvas_scale
+        if abs(pdf_x2 - pdf_x1) < min_size or abs(pdf_y2 - pdf_y1) < min_size:
+            return
+        
+        # Ensure proper order
+        if pdf_x1 > pdf_x2:
+            pdf_x1, pdf_x2 = pdf_x2, pdf_x1
+        if pdf_y1 > pdf_y2:
+            pdf_y1, pdf_y2 = pdf_y2, pdf_y1
+        
+        # Update section rect
+        self.resize_section["rect"] = [pdf_x1, pdf_y1, pdf_x2, pdf_y2]
+        
+        # Update canvas rectangle
+        canvas_x1 = pdf_x1 * self.canvas_scale
+        canvas_y1 = pdf_y1 * self.canvas_scale
+        canvas_x2 = pdf_x2 * self.canvas_scale
+        canvas_y2 = pdf_y2 * self.canvas_scale
+        
+        if "canvas_id" in self.resize_section:
+            self.canvas.coords(self.resize_section["canvas_id"], 
+                             canvas_x1, canvas_y1, canvas_x2, canvas_y2)
+        
+        # Update text position
+        if "text_id" in self.resize_section:
+            center_x = (canvas_x1 + canvas_x2) / 2
+            center_y = (canvas_y1 + canvas_y2) / 2
+            self.canvas.coords(self.resize_section["text_id"], center_x, center_y)
+        
+        # Update resize handles
+        self.update_resize_handles(self.resize_section)
+    
+    def update_resize_handles(self, section):
+        """Update positions of resize handles for a section."""
+        if "resize_handles" not in section:
+            return
+        
+        # Get section coordinates
+        pdf_rect = section["rect"]
+        x1 = pdf_rect[0] * self.canvas_scale
+        y1 = pdf_rect[1] * self.canvas_scale
+        x2 = pdf_rect[2] * self.canvas_scale
+        y2 = pdf_rect[3] * self.canvas_scale
+        
+        handle_size = 6
+        handle_positions = {
+            'nw': (x1, y1),
+            'n': ((x1+x2)/2, y1),
+            'ne': (x2, y1),
+            'e': (x2, (y1+y2)/2),
+            'se': (x2, y2),
+            's': ((x1+x2)/2, y2),
+            'sw': (x1, y2),
+            'w': (x1, (y1+y2)/2)
+        }
+        
+        for handle_type, handle_id in section["resize_handles"].items():
+            if handle_type in handle_positions:
+                hx, hy = handle_positions[handle_type]
+                self.canvas.coords(handle_id,
+                                 hx - handle_size//2, hy - handle_size//2,
+                                 hx + handle_size//2, hy + handle_size//2)
+    
+    def end_resize(self, event):
+        """End resizing operation."""
+        if self.resizing and self.resize_section:
+            print(f"✅ Finished resizing section '{self.resize_section['name']}'")
+            rect = self.resize_section["rect"]
+            print(f"   New dimensions: ({rect[0]:.0f}, {rect[1]:.0f}, {rect[2]:.0f}, {rect[3]:.0f})")
+        
+        self.resizing = False
+        self.resize_section = None
+        self.resize_handle = None
+        self.canvas.configure(cursor="crosshair")
+    
     def run(self):
         """Start the application."""
         print("🎯 A3 Section Definition Tool started")
         print("📖 Instructions:")
         print("   1. Load your A3 template PDF")
         print("   2. Switch between pages")
-        print("   3. Click and drag to define sections")
-        print("   4. Name sections and map to fields")
-        print("   5. Save section configuration")
+        print("   3. Click and drag to define new sections")
+        print("   4. Drag resize handles to adjust existing sections")
+        print("   5. Name sections and map to fields")
+        print("   6. Save section configuration")
         self.root.mainloop()
 
 def main():

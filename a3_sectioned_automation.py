@@ -37,14 +37,14 @@ except ImportError:
 class A3SectionedProcessor:
     """A3 document processor using manual section definitions."""
     
-    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json"):
+    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json", enable_spell_check: bool = True):
         """Initialize the sectioned A3 processor."""
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError("OpenAI API key required")
         
         # Initialize sectioned OCR
-        self.sectioned_ocr = SectionedGPT4oOCR(self.api_key, section_config_path)
+        self.sectioned_ocr = SectionedGPT4oOCR(self.api_key, section_config_path, enable_spell_check)
         self.section_config_path = Path(section_config_path)
         
         # Initialize template processor with custom config if available
@@ -297,6 +297,9 @@ class A3SectionedAutomationUI:
         # Control panel
         self.setup_control_panel(main_frame)
         
+        # Processing options
+        self.setup_processing_options(main_frame)
+        
         # Drop zone
         self.setup_drop_zone(main_frame)
         
@@ -349,6 +352,40 @@ class A3SectionedAutomationUI:
             pady=5,
             command=self.refresh_section_status
         ).pack(side=RIGHT)
+        
+    def setup_processing_options(self, parent):
+        """Setup processing options panel."""
+        options_frame = LabelFrame(parent, text="⚙️ Processing Options", font=("Segoe UI", 12, "bold"))
+        options_frame.pack(fill=X, pady=(0, 10))
+        
+        # Options container
+        options_container = Frame(options_frame)
+        options_container.pack(fill=X, padx=10, pady=10)
+        
+        # Spell check option
+        self.spell_check_var = BooleanVar(value=True)
+        spell_check_frame = Frame(options_container)
+        spell_check_frame.pack(fill=X, pady=(0, 5))
+        
+        Checkbutton(
+            spell_check_frame,
+            text="🔤 Enable Spell Check",
+            variable=self.spell_check_var,
+            font=("Segoe UI", 10),
+            fg="#2c3e50",
+            bg="#f0f0f0",
+            activebackground="#f0f0f0",
+            activeforeground="#2c3e50"
+        ).pack(side=LEFT)
+        
+        # Spell check info
+        Label(
+            spell_check_frame,
+            text="Automatically corrects common OCR errors and typos",
+            font=("Segoe UI", 9),
+            fg="#7f8c8d",
+            bg="#f0f0f0"
+        ).pack(side=LEFT, padx=(10, 0))
         
     def setup_drop_zone(self, parent):
         """Setup drag and drop zone."""
@@ -489,7 +526,7 @@ class A3SectionedAutomationUI:
                 # Reinitialize processor if needed
                 if self.processor:
                     try:
-                        self.processor = A3SectionedProcessor(self.processor.api_key)
+                        self.processor = A3SectionedProcessor(self.processor.api_key, enable_spell_check=self.spell_check_var.get())
                         self.log_message(f"🔄 Reloaded section configuration: {total_sections} sections")
                     except Exception as e:
                         self.log_message(f"⚠️ Failed to reload processor: {e}")
@@ -511,7 +548,7 @@ class A3SectionedAutomationUI:
                 return
             
             # Initialize processor
-            self.processor = A3SectionedProcessor(api_key)
+            self.processor = A3SectionedProcessor(api_key, enable_spell_check=self.spell_check_var.get())
             self.log_message("✅ A3 Sectioned Processor initialized successfully")
             self.log_message("🎯 Using MANUAL SECTIONING for 100% consistent results")
             

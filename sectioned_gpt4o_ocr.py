@@ -14,6 +14,15 @@ import requests
 from typing import Dict, List, Any, Tuple
 import fitz  # PyMuPDF
 
+# Import spell checker
+try:
+    from ocr_spell_checker import spell_check_sections
+    SPELL_CHECK_AVAILABLE = True
+    print("✅ Spell checker available")
+except ImportError:
+    SPELL_CHECK_AVAILABLE = False
+    print("⚠️ Spell checker not available - install with: pip install pyspellchecker")
+
 # Load environment variables
 try:
     from dotenv import load_dotenv
@@ -56,7 +65,7 @@ except Exception as e:
 class SectionedGPT4oOCR:
     """GPT-4o OCR with manual section definitions for consistent results."""
     
-    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json"):
+    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json", enable_spell_check: bool = True):
         """Initialize sectioned OCR with API key and section configuration."""
         # Specifically get OpenAI API key (not GitHub token)
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
@@ -78,6 +87,11 @@ class SectionedGPT4oOCR:
         # Reference template size (size sections were defined on)
         self.reference_template_size = None
         self.load_reference_template_size()
+        
+        # Spell check settings
+        self.enable_spell_check = enable_spell_check and SPELL_CHECK_AVAILABLE
+        if enable_spell_check and not SPELL_CHECK_AVAILABLE:
+            print("⚠️ Spell check requested but not available")
         
         print(f"✅ Sectioned GPT-4o OCR initialized")
         print(f"📂 Section config: {self.section_config_path}")
@@ -734,6 +748,49 @@ Respond with just 'A' or 'B' and a brief reason."""
             print(f"📝 Sections with text: {len(sections_with_text)}")
             print(f"⏱️ Total processing time: {total_processing_time:.2f}s")
             
+            # Apply spell check if enabled
+            final_results = all_results
+            if self.enable_spell_check and SPELL_CHECK_AVAILABLE:
+                print(f"\n🔤 Applying spell check to extracted text...")
+                try:
+                    # Convert to format expected by spell checker
+                    sectioned_results = {"page_1": [], "page_2": []}
+                    for result in all_results:
+                        page_num = result["page_number"]
+                        page_key = f"page_{page_num}"
+                        if page_key in sectioned_results:
+                            sectioned_results[page_key].append({
+                                "name": result["section_name"],
+                                "text": result["text"],
+                                "target_field": result["target_field"]
+                            })
+                    
+                    # Apply spell check
+                    corrected_results = spell_check_sections(sectioned_results)
+                    
+                    # Convert back to original format
+                    corrected_count = 0
+                    for i, result in enumerate(all_results):
+                        page_num = result["page_number"]
+                        page_key = f"page_{page_num}"
+                        if page_key in corrected_results:
+                            # Find matching corrected section
+                            for corrected_section in corrected_results[page_key]:
+                                if corrected_section["name"] == result["section_name"]:
+                                    if "spell_corrections" in corrected_section:
+                                        corrected_count += len(corrected_section["spell_corrections"])
+                                        result["spell_corrections"] = corrected_section["spell_corrections"]
+                                    result["text"] = corrected_section["text"]
+                                    break
+                    
+                    if corrected_count > 0:
+                        print(f"✅ Spell check applied: {corrected_count} corrections made")
+                    else:
+                        print(f"✅ Spell check complete: no corrections needed")
+                        
+                except Exception as e:
+                    print(f"⚠️ Spell check failed: {e}")
+            
             return {
                 "success": True,
                 "file_name": document_path.name,
@@ -741,7 +798,8 @@ Respond with just 'A' or 'B' and a brief reason."""
                 "successful_sections": len(successful_sections),
                 "sections_with_text": len(sections_with_text),
                 "total_processing_time": total_processing_time,
-                "results": all_results
+                "spell_check_enabled": self.enable_spell_check,
+                "results": final_results
             }
         
         except Exception as e:
