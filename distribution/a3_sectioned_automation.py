@@ -331,32 +331,6 @@ class A3SectionedAutomationUI:
             command=self.launch_section_tool
         ).pack(side=LEFT, padx=(0, 10))
         
-        # Field positioning tool
-        Button(
-            btn_frame,
-            text="📝 Edit Output Fields",
-            font=("Segoe UI", 10, "bold"),
-            bg="#e67e22",
-            fg="white",
-            relief=FLAT,
-            padx=15,
-            pady=8,
-            command=self.launch_field_tool
-        ).pack(side=LEFT, padx=(0, 10))
-        
-        # PDF flattening tool
-        Button(
-            btn_frame,
-            text="📄 Flatten PDFs",
-            font=("Segoe UI", 10, "bold"),
-            bg="#9b59b6",
-            fg="white",
-            relief=FLAT,
-            padx=15,
-            pady=8,
-            command=self.launch_flatten_tool
-        ).pack(side=LEFT, padx=(0, 10))
-        
         # Section status
         self.section_status_var = StringVar(value="Section config: Not loaded")
         Label(
@@ -530,32 +504,6 @@ class A3SectionedAutomationUI:
             self.log_message("💡 After defining sections, click 'Refresh' to reload configuration")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to launch section tool: {e}")
-    
-    def launch_field_tool(self):
-        """Launch the field positioning tool for editing output template fields."""
-        import subprocess
-        import sys
-        
-        try:
-            subprocess.Popen([sys.executable, "field_positioning_tool.py"])
-            self.log_message("🚀 Launched field positioning tool")
-            self.log_message("💡 Use this tool to edit where text appears on the output PDF")
-            self.log_message("💡 After editing fields, restart the application to use the new positions")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch field positioning tool: {e}")
-    
-    def launch_flatten_tool(self):
-        """Launch the PDF flattening tool for removing editable fields."""
-        import subprocess
-        import sys
-        
-        try:
-            subprocess.Popen([sys.executable, "pdf_flattening_tool.py"])
-            self.log_message("🚀 Launched PDF flattening tool")
-            self.log_message("💡 Use this tool to convert editable fields to permanent text")
-            self.log_message("💡 Perfect for finalizing documents before distribution")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch PDF flattening tool: {e}")
     
     def refresh_section_status(self):
         """Refresh section configuration status."""
