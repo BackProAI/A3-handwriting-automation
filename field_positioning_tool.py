@@ -579,7 +579,8 @@ class FieldPositioningTool:
             title="Save Field Configuration",
             defaultextension=".json",
             filetypes=[("JSON files", "*.json")],
-            initialfile="custom_field_positions.json"
+            initialdir="A3_templates",
+            initialfile="custom_field_position.json"
         )
         
         if file_path:
@@ -594,7 +595,8 @@ class FieldPositioningTool:
         """Load field configuration from JSON file."""
         file_path = filedialog.askopenfilename(
             title="Load Field Configuration",
-            filetypes=[("JSON files", "*.json")]
+            filetypes=[("JSON files", "*.json")],
+            initialdir="A3_templates"
         )
         
         if file_path:

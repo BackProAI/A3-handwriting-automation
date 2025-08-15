@@ -1,0 +1,204 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{multicol}
+\usepackage{array}
+
+\definecolor{primary}{HTML}{2563EB}
+\definecolor{success}{HTML}{059669}
+\definecolor{warning}{HTML}{D97706}
+\definecolor{danger}{HTML}{DC2626}
+
+\title{\textbf{\Large A3 Document Automation System}\\\large Complete User Guide}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-20pt}
+
+\begin{tcolorbox}[colback=primary!5,colframe=primary,title=\textbf{�� Quick Start Overview}]
+This system automatically extracts handwritten text from A3 documents and populates editable PDF templates. Follow these steps to process your documents efficiently.
+\end{tcolorbox}
+
+\section*{�� STEP-BY-STEP WORKFLOW}
+
+\subsection*{1. \faPlay\space Launch the Application}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Double-click \texttt{main\_launcher.py} or run from command line
+    \item \textcolor{primary}{\textbf{First Time Users:}} System will check for GitHub token and API key setup
+    \item Click \textcolor{primary}{\textbf{"Check for Updates"}} to ensure you have the latest version
+    \item Click \textcolor{success}{\textbf{"Launch A3 Automation"}} to open the main interface
+\end{enumerate}
+
+\subsection*{2. \faCog\space Configure Processing Options}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Enable \textcolor{success}{\textbf{"Spell Check"}} tickbox for automatic text correction
+    \item Choose processing mode in the main interface
+    \item Verify that section configuration is loaded (21 sections should be detected)
+\end{enumerate}
+
+\subsection*{3. \faBook\space Customise Section Areas (see Section Definition Tool)}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Assess Accuracy:} Check if OCR extraction areas match your document layout
+    \item \textbf{Adjust Sections:} Use \textcolor{primary}{\textbf{"�� Section Tool"}} to modify extraction boundaries
+    \item \textbf{Fine-tune Areas:} Resize sections to capture handwriting more precisely
+    \item \textbf{Test Changes:} Process a sample document to verify improved accuracy
+\end{enumerate}
+
+\subsection*{4. \faEdit\space Review \& Edit Results (see Field Positioning Tool)}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item \textbf{View Output:} Processed PDF opens in your default viewer
+    \item \textbf{Edit Text:} Click directly in PDF fields to modify extracted text
+    \item \textbf{Adjust Layout:} Use \textcolor{primary}{\textbf{"�� Edit Output Fields"}} to resize/reposition fields
+    \item \textbf{Save Changes:} Save the edited PDF when satisfied
+\end{enumerate}
+
+\subsection*{5. \faUpload\space Process Your Document}
+\begin{multicols}{2}
+\textbf{Method A: Drag \& Drop}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Drag PDF file into the interface
+    \item System auto-detects file type
+    \item Processing starts automatically
+\end{enumerate}
+
+\textbf{Method B: File Browser}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Click \textcolor{primary}{\textbf{"Browse Files"}}
+    \item Select your A3 PDF document
+    \item Click \textcolor{success}{\textbf{"Process Document"}}
+\end{enumerate}
+\end{multicols}
+
+
+\subsection*{6. \faFile\space Finalise Document}
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Click \textcolor{primary}{\textbf{"�� Flatten PDFs"}} to convert editable fields to permanent text
+    \item Choose input PDF (your edited document)
+    \item Select output location
+    \item Click \textcolor{success}{\textbf{"Flatten PDF"}} - text formatting is preserved automatically
+\end{enumerate}
+
+\section*{��️ DETAILED TOOL INSTRUCTIONS}
+
+\subsection*{\faBook\space Section Definition Tool}
+\textbf{Purpose:} Customise OCR extraction areas for better accuracy
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Click \textcolor{primary}{\textbf{"�� Section Tool"}} in main interface
+    \item Click \textcolor{primary}{\textbf{"Load Template"}}
+    \item Navigate to \texttt{processed\_documents} folder and select \texttt{A3\_Custom\_Template.pdf}
+    \item Click \textcolor{primary}{\textbf{"Load Sections"}} button
+    \item Navigate to \texttt{A3\_templates} folder and select \texttt{a3\_section\_config.json}
+    \item \textbf{Edit Sections:} Modify extraction areas as needed
+    \item \textbf{Draw Rectangle:} Click and drag to define new section boundaries
+    \item \textbf{Name Section:} Enter descriptive name (e.g., "personal\_goals")
+    \item \textbf{Adjust Size:} Drag corners/edges to resize sections
+    \item \textbf{Move Section:} Click and drag section to reposition
+    \item Click \textcolor{success}{\textbf{"Save Sections"}} then click \textcolor{success}{\textbf{"Save"}}
+    \item When prompted "Already exists, do you want to replace it?" click \textcolor{success}{\textbf{"Yes"}}
+    \item Click \textcolor{success}{\textbf{"OK"}} to confirm
+\end{enumerate}
+
+\subsection*{\faEdit\space Field Positioning Tool}
+\textbf{Purpose:} Adjust where extracted text appears in output PDFs
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Click \textcolor{primary}{\textbf{"�� Edit Output Fields"}} in main interface
+    \item Click \textcolor{primary}{\textbf{"Load A3 Template"}}
+    \item Navigate to \texttt{A3\_templates} folder and select \texttt{More4Life A3 Goals - blank.pdf}
+    \item Click \textcolor{primary}{\textbf{"Load Field Positions"}}
+    \item Navigate to \texttt{A3\_templates} folder and select \texttt{custom\_field\_position.json}
+    \item \textbf{Edit Fields:} Modify field positions and sizes as needed
+    \item \textbf{Select Field:} Click any text field to select it
+    \item \textbf{Resize Field:} Drag corners to make fields larger/smaller
+    \item \textbf{Move Field:} Click centre and drag to new position
+    \item \textbf{Multi-line Fields:} Resize height for text that needs multiple lines
+    \item \textbf{Font Size:} All fields use consistent 12pt font automatically
+    \item Click \textcolor{success}{\textbf{"Save Field Positions"}} when finished
+    \item When prompted "Do you want to replace it?" click \textcolor{success}{\textbf{"Yes"}}
+    \item Click \textcolor{success}{\textbf{"OK"}} to confirm
+    \item \textbf{Note:} Changes apply to all future processed documents
+\end{enumerate}
+
+\subsection*{\faFilePdf\space PDF Flattening Tool}
+\textbf{Purpose:} Convert editable PDFs to final documents with permanent text
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item Click \textcolor{primary}{\textbf{"�� Flatten PDFs"}} in main interface
+    \item Click \textcolor{primary}{\textbf{"Select PDF to Flatten"}}
+    \item Choose your edited A3 document (from processed\_documents folder)
+    \item Click \textcolor{primary}{\textbf{"Choose Output Location"}}
+    \item Select where to save the flattened PDF
+    \item Click \textcolor{success}{\textbf{"Flatten PDF"}} to start conversion
+    \item \textbf{Auto-Features:} Text wrapping and line breaks preserved automatically
+    \item \textbf{Result:} Non-editable PDF perfect for sharing/printing
+    \item \textbf{Tip:} Always keep original editable version for future changes
+\end{enumerate}
+
+
+\subsection*{\faCogs\space Tool Access Methods}
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item \textbf{From Main Interface:} Click tool buttons on the right panel
+\end{itemize}
+
+\section*{⚠️ IMPORTANT NOTES}
+
+\begin{tcolorbox}[colback=success!10,colframe=success]
+\textbf{✅ Best Practices:}
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item Ensure documents are high-quality scans (300+ DPI)
+    \item Keep handwriting clear and legible
+    \item Process one document at a time for best results
+    \item Always review extracted text before finalising
+\end{itemize}
+\end{tcolorbox}
+
+\section*{�� FILE LOCATIONS}
+
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Input Documents:} Any location on your computer
+    \item \textbf{Processed Output:} \texttt{processed\_documents/} folder
+    \item \textbf{Template Files:} \texttt{A3\_templates/} folder
+    \item \textbf{Configuration:} \texttt{a3\_section\_config.json} and \texttt{custom\_field\_positions.json}
+\end{itemize}
+
+\section*{�� TROUBLESHOOTING \& TIPS}
+
+\subsection*{\faExclamationTriangle\space Common Issues}
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Poor OCR Results:} Use Section Tool to adjust extraction areas
+    \item \textbf{Text Overlapping:} Use Field Editor to resize/reposition output fields  
+    \item \textbf{Wrong Page Order:} Use Manual Page Order Tool to override detection
+    \item \textbf{API Errors:} Check \texttt{.env} file has correct \texttt{OPENAI\_API\_KEY}
+    \item \textbf{Update Failures:} Ensure \texttt{GITHUB\_TOKEN} is set in \texttt{.env}
+\end{itemize}
+
+\subsection*{\faLightbulb\space Pro Tips}
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Batch Processing:} Process multiple documents with same settings
+    \item \textbf{Template Reuse:} Save custom field positions for different document types
+    \item \textbf{Quality Control:} Always review spell-check suggestions before accepting
+    \item \textbf{Backup:} Keep original scanned documents separate from processed ones
+    \item \textbf{Performance:} Close other applications during processing for best speed
+\end{itemize}
+
+\subsection*{\faKeyboard\space Keyboard Shortcuts}
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Ctrl+O:} Open file browser in main interface
+    \item \textbf{Ctrl+S:} Save current configuration in tools
+    \item \textbf{Esc:} Cancel current operation
+    \item \textbf{F5:} Refresh interface
+\end{itemize}
+
+\begin{tcolorbox}[colback=primary!5,colframe=primary]
+\textbf{�� Complete Workflow Time:} Typically 2-3 minutes per A3 document (depending on handwriting complexity)
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=success!5,colframe=success]
+\textbf{�� Support:} For technical issues, check the \texttt{README.md} file or contact your system administrator with specific error messages.
+\end{tcolorbox}
+
+\end{document}

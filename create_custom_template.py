@@ -14,7 +14,7 @@ def create_custom_template():
     print("=" * 40)
     
     # Check for custom configuration
-    config_path = Path("custom_field_positions.json")
+    config_path = Path("A3_templates/custom_field_position.json")
     if not config_path.exists():
         print(f"❌ Configuration file not found: {config_path}")
         print(f"📝 Run 'python create_field_config.py' first to create the configuration file")

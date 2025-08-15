@@ -272,16 +272,21 @@ class A3Launcher:
             if extracted_folders:
                 source_dir = extracted_folders[0]
                 
-                # Copy files (skip launcher itself to avoid conflicts)
+                # Copy files (skip launcher itself and problematic folders to avoid conflicts)
+                skip_items = {"main_launcher.py", ".github", ".git", "__pycache__", ".pytest_cache"}
                 for item in source_dir.iterdir():
-                    if item.name != "main_launcher.py":
+                    if item.name not in skip_items:
                         dest = self.app_dir / item.name
-                        if item.is_file():
-                            shutil.copy2(item, dest)
-                        elif item.is_dir():
-                            if dest.exists():
-                                shutil.rmtree(dest)
-                            shutil.copytree(item, dest)
+                        try:
+                            if item.is_file():
+                                shutil.copy2(item, dest)
+                            elif item.is_dir():
+                                if dest.exists():
+                                    shutil.rmtree(dest)
+                                shutil.copytree(item, dest)
+                        except PermissionError as e:
+                            print(f"Skipping {item.name} due to permission error: {e}")
+                            continue  # Skip this item and continue with others
                 
                 # Update version file
                 new_version = release_data['tag_name'].lstrip('v')
@@ -319,6 +324,96 @@ class A3Launcher:
         self.root.quit()
         os.execv(sys.executable, ['python'] + sys.argv)
     
+    def _ensure_configurations_updated(self):
+        """Ensure both JSON configurations and PDF template are up-to-date."""
+        try:
+            self.update_status("Checking configuration files...", "blue")
+            
+            # Check paths
+            section_config_path = self.app_dir / "A3_templates" / "a3_section_config.json"
+            field_config_path = self.app_dir / "A3_templates" / "custom_field_position.json"
+            template_path = self.app_dir / "processed_documents" / "A3_Custom_Template.pdf"
+            
+            # Check if configurations exist
+            if not section_config_path.exists():
+                self.update_status("Warning: Section configuration missing", "orange")
+                messagebox.showwarning(
+                    "Configuration Missing",
+                    "Section configuration not found!\n\n"
+                    "You'll need to create sections using 'Define Sections' tool first."
+                )
+                return
+            
+            if not field_config_path.exists():
+                self.update_status("Warning: Field configuration missing", "orange")
+                messagebox.showwarning(
+                    "Configuration Missing", 
+                    "Field position configuration not found!\n\n"
+                    "Default field positions will be used."
+                )
+                return
+            
+            # Check if template needs updating
+            field_modified = field_config_path.stat().st_mtime
+            template_exists = template_path.exists()
+            
+            should_regenerate = False
+            
+            if not template_exists:
+                should_regenerate = True
+                reason = "Template PDF not found"
+            else:
+                template_modified = template_path.stat().st_mtime
+                if field_modified > template_modified:
+                    should_regenerate = True
+                    reason = "Field configuration updated"
+            
+            if should_regenerate:
+                self.update_status(f"Updating template ({reason})...", "blue")
+                self._regenerate_template_launcher()
+            
+            self.update_status("Configuration check complete", "green")
+            
+        except Exception as e:
+            print(f"Warning: Failed to check configurations: {e}")
+            self.update_status("Configuration check failed", "orange")
+    
+    def _regenerate_template_launcher(self):
+        """Regenerate the PDF template from the launcher."""
+        try:
+            # Import and call the template creation function
+            import sys
+            import importlib.util
+            
+            # Load create_custom_template module
+            spec = importlib.util.spec_from_file_location(
+                "create_custom_template", 
+                self.app_dir / "create_custom_template.py"
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            # Call the template creation function
+            success = module.create_custom_template()
+            
+            if success:
+                print("✅ PDF template successfully updated!")
+            else:
+                print("⚠️ Failed to regenerate PDF template")
+                messagebox.showwarning(
+                    "Template Update Failed",
+                    "Could not update PDF template.\n\n"
+                    "The application will use the existing template."
+                )
+                
+        except Exception as e:
+            print(f"⚠️ Error regenerating template: {e}")
+            messagebox.showwarning(
+                "Template Update Error", 
+                f"Error updating PDF template:\n{str(e)}\n\n"
+                f"The application will use the existing template."
+            )
+    
     def launch_app(self):
         """Launch the main A3 application"""
         try:
@@ -331,6 +426,9 @@ class A3Launcher:
                                    "Main application file not found!\n\n"
                                    "Please check for updates or reinstall the application.")
                 return
+            
+            # Ensure JSON configurations are updated before launching
+            self._ensure_configurations_updated()
             
             # Launch the main application
             subprocess.Popen([sys.executable, str(main_app)], 

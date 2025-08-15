@@ -188,8 +188,8 @@ class A3SectionDefiner:
         self.load_field_options()
         
     def load_field_options(self):
-        """Load available field names from custom_field_positions.json."""
-        config_path = Path("custom_field_positions.json")
+        """Load available field names from custom_field_position.json."""
+        config_path = Path("A3_templates/custom_field_position.json")
         field_options = []
         
         if config_path.exists():
@@ -214,7 +214,7 @@ class A3SectionDefiner:
             except Exception as e:
                 print(f"⚠️ Could not load field options: {e}")
         else:
-            print("⚠️ No custom_field_positions.json found - using generic field names")
+            print("⚠️ No custom_field_position.json found - using generic field names")
             self.field_combo['values'] = ["text_field_1", "text_field_2", "text_field_3"]
     
     def load_pdf(self):
@@ -647,6 +647,7 @@ class A3SectionDefiner:
         file_path = filedialog.asksaveasfilename(
             title="Save Section Configuration",
             defaultextension=".json",
+            initialdir="A3_templates",
             initialfile="a3_section_config.json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
         )

@@ -65,7 +65,7 @@ except Exception as e:
 class SectionedGPT4oOCR:
     """GPT-4o OCR with manual section definitions for consistent results."""
     
-    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json", enable_spell_check: bool = True):
+    def __init__(self, api_key: str = None, section_config_path: str = "A3_templates/a3_section_config.json", enable_spell_check: bool = True):
         """Initialize sectioned OCR with API key and section configuration."""
         # Specifically get OpenAI API key (not GitHub token)
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')

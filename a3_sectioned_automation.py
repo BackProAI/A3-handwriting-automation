@@ -37,7 +37,7 @@ except ImportError:
 class A3SectionedProcessor:
     """A3 document processor using manual section definitions."""
     
-    def __init__(self, api_key: str = None, section_config_path: str = "a3_section_config.json", enable_spell_check: bool = True):
+    def __init__(self, api_key: str = None, section_config_path: str = "A3_templates/a3_section_config.json", enable_spell_check: bool = True):
         """Initialize the sectioned A3 processor."""
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
@@ -48,7 +48,7 @@ class A3SectionedProcessor:
         self.section_config_path = Path(section_config_path)
         
         # Initialize template processor with custom config if available
-        custom_config_path = Path("custom_field_positions.json")
+        custom_config_path = Path("A3_templates/custom_field_position.json")
         if custom_config_path.exists():
             print(f"✅ Found custom field configuration: {custom_config_path}")
             custom_config = self._load_custom_config(custom_config_path)
@@ -68,6 +68,55 @@ class A3SectionedProcessor:
         except Exception as e:
             print(f"⚠️ Failed to load custom config: {e}")
             return {}
+    
+    def _ensure_template_updated(self):
+        """Ensure the PDF template is updated with latest field positions from JSON."""
+        try:
+            custom_config_path = Path("A3_templates/custom_field_position.json")
+            custom_template_path = Path("processed_documents/A3_Custom_Template.pdf")
+            
+            # Check if JSON config exists
+            if not custom_config_path.exists():
+                print("⚠️ Custom field configuration not found - using default template")
+                return
+            
+            # Check if template needs updating
+            json_modified = custom_config_path.stat().st_mtime
+            template_exists = custom_template_path.exists()
+            
+            if not template_exists:
+                print("🔄 Creating new PDF template from field configuration...")
+                self._regenerate_template()
+                return
+            
+            template_modified = custom_template_path.stat().st_mtime
+            
+            # If JSON is newer than template, regenerate
+            if json_modified > template_modified:
+                print("🔄 Field configuration updated - regenerating PDF template...")
+                self._regenerate_template()
+            else:
+                print("✅ PDF template is up-to-date with field configuration")
+                
+        except Exception as e:
+            print(f"⚠️ Failed to check template status: {e}")
+    
+    def _regenerate_template(self):
+        """Regenerate the PDF template using current field configuration."""
+        try:
+            from create_custom_template import create_custom_template
+            
+            print("🛠️ Regenerating PDF template with updated field positions...")
+            success = create_custom_template()
+            
+            if success:
+                print("✅ PDF template successfully updated!")
+            else:
+                print("⚠️ Failed to regenerate PDF template - proceeding with existing template")
+                
+        except Exception as e:
+            print(f"⚠️ Error regenerating template: {e}")
+            print("⚠️ Proceeding with existing template")
     
     def populate_template_directly(self, template_path: Path, output_path: Path, field_mappings: Dict[str, str]) -> Path:
         """Directly populate template fields using sectioned field mappings."""
@@ -191,6 +240,9 @@ class A3SectionedProcessor:
             # Check if section configuration exists
             if not self.section_config_path.exists():
                 raise Exception(f"Section configuration not found: {self.section_config_path}. Create sections using section_definition_tool.py")
+            
+            # Ensure custom template is up-to-date with latest field positions
+            self._ensure_template_updated()
             
             print(f"🎯 Processing with SECTIONED OCR: {file_path}")
             
@@ -559,7 +611,7 @@ class A3SectionedAutomationUI:
     
     def refresh_section_status(self):
         """Refresh section configuration status."""
-        section_config_path = Path("a3_section_config.json")
+        section_config_path = Path("A3_templates/a3_section_config.json")
         
         if section_config_path.exists():
             try:
@@ -607,7 +659,7 @@ class A3SectionedAutomationUI:
             # Check section configuration
             self.refresh_section_status()
             
-            section_config_path = Path("a3_section_config.json")
+            section_config_path = Path("A3_templates/a3_section_config.json")
             if section_config_path.exists():
                 self.log_message("✅ Section configuration found")
                 self.log_message("🚀 Ready to process A3 documents with manual sections!")
@@ -649,7 +701,7 @@ class A3SectionedAutomationUI:
             return
         
         # Check section configuration
-        section_config_path = Path("a3_section_config.json")
+        section_config_path = Path("A3_templates/a3_section_config.json")
         if not section_config_path.exists():
             messagebox.showwarning(
                 "No Section Configuration", 

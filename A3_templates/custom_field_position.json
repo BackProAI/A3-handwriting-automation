@@ -10,7 +10,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Opportunities to be focused on & captured",
@@ -22,7 +22,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Strengths to be reinforced & maximised",
@@ -34,7 +34,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "Right_mid",
@@ -46,7 +46,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10,
+      "fontsize": 12,
       "line_height": 16
     },
     {
@@ -59,7 +59,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10,
+      "fontsize": 12,
       "line_height": 16
     },
     {
@@ -72,7 +72,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10,
+      "fontsize": 12,
       "line_height": 16
     }
   ],
@@ -80,14 +80,14 @@
     {
       "name": "money_goals",
       "rect": [
-        81.385,
-        206.44,
-        180.635,
-        301.71999999999997
+        57.565000000000005,
+        192.545,
+        200.48499999999999,
+        323.55499999999995
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "money_now",
@@ -99,7 +99,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "money_todo",
@@ -111,7 +111,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_goals",
@@ -123,7 +123,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_now",
@@ -135,7 +135,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "business_todo",
@@ -147,7 +147,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_goals",
@@ -159,7 +159,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_now",
@@ -171,7 +171,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "leisure_todo",
@@ -183,7 +183,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_goals",
@@ -195,7 +195,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_now",
@@ -207,7 +207,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "health_todo",
@@ -219,7 +219,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_goals",
@@ -231,7 +231,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_now",
@@ -243,7 +243,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     },
     {
       "name": "family_todo",
@@ -255,7 +255,7 @@
       ],
       "type": "text",
       "multiline": true,
-      "fontsize": 10
+      "fontsize": 12
     }
   ]
 }
